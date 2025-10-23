@@ -1,0 +1,1021 @@
+/* Reset e configurações base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Container principal */
+.container-app {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Hero section */
+.hero {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.title h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Botões base */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-ghost:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+/* Formulários */
+form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+input[type="file"] {
+    padding: 8px 12px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+input[type="file"]:hover {
+    border-color: #667eea;
+    background: #fff;
+}
+
+input[type="file"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Card da tabela */
+.card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+/* Tabela */
+.table-wrap {
+    overflow-x: auto;
+    border-radius: 20px;
+}
+
+.styled {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.styled thead {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.styled th {
+    padding: 15px 12px;
+    text-align: left;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.styled tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.styled tbody tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: scale(1.01);
+}
+
+.styled td {
+    padding: 12px;
+    vertical-align: middle;
+}
+
+/* Badge */
+.badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Textos auxiliares */
+.muted {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Responsividade */
+@media (max-width: 1200px) {
+    .container-app {
+        padding: 15px;
+    }
+    
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .toolbar > * {
+        margin-left: 0 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero {
+        padding: 20px;
+    }
+    
+    .title h1 {
+        font-size: 2rem;
+    }
+    
+    .styled {
+        font-size: 0.85rem;
+    }
+    
+    .styled th,
+    .styled td {
+        padding: 8px 6px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .container-app {
+        padding: 10px;
+    }
+    
+    .hero {
+        padding: 15px;
+    }
+    
+    .title h1 {
+        font-size: 1.5rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    input[type="file"] {
+        width: 100%;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.styled tbody tr {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.styled tbody tr:nth-child(even) {
+    animation-delay: 0.1s;
+}
+
+/* Estados de foco e active */
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+/* Scrollbar personalizada */
+.table-wrap::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-wrap::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 4px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a6fd8, #6a42a0);
+}
+
+/* Fim do arquivo styles.css */
+
+/* form pesquisa list */
+
+/* Reset e configurações base */
+/* Reset e configurações base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+    line-height: 1.6;
+    overflow-x: auto; /* Permite scroll horizontal no body se necessário */
+}
+
+/* Container principal - aumentado para acomodar mais colunas */
+.container-app {
+    max-width: 1800px; /* Aumentado de 1400px para 1800px */
+    margin: 0 auto;
+    padding: 20px;
+    min-width: 1200px; /* Largura mínima para garantir que não fique muito compacto */
+}
+
+/* Hero section */
+.hero {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.title h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 1.1rem;
+    font-weight: 400;
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Botões base */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-ghost:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-info {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+}
+
+.btn-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+}
+
+.btn:disabled,
+.btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.btn:disabled:hover,
+.btn.disabled:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Formulário de pesquisa */
+.search-form {
+    margin-left: 12px;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-input-container {
+    display: flex;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.search-input-container:focus-within {
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.search-input {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    outline: none;
+    font-size: 0.9rem;
+    background: transparent;
+}
+
+.search-input::placeholder {
+    color: #a0aec0;
+}
+
+.search-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.search-button:hover {
+    background: linear-gradient(135deg, #5a6fd8, #6a42a0);
+}
+
+.search-icon {
+    flex-shrink: 0;
+}
+
+.search-text {
+    white-space: nowrap;
+}
+
+/* Filtro de campus */
+.toolbar select {
+    padding: 8px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 150px;
+}
+
+.toolbar select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* Campo de edital no formulário de importação */
+input[type="text"][name="editalDescricao"] {
+    padding: 8px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    transition: all 0.3s ease;
+    min-width: 300px;
+}
+
+input[type="text"][name="editalDescricao"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+input[type="text"][name="editalDescricao"]::placeholder {
+    color: #a0aec0;
+    font-size: 0.85rem;
+}
+
+/* Formulários */
+form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+input[type="file"] {
+    padding: 8px 12px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+input[type="file"]:hover {
+    border-color: #667eea;
+    background: #fff;
+}
+
+input[type="file"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Card da tabela - agora com largura total */
+.card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+    width: 100%;
+}
+
+/* Container da tabela com scroll horizontal */
+.table-wrap {
+    overflow-x: auto;
+    border-radius: 20px;
+    width: 100%;
+}
+
+/* Tabela com largura total e colunas otimizadas */
+.styled {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem; /* Reduzido ligeiramente para caber mais colunas */
+    min-width: 1400px; /* Largura mínima para garantir que todas as colunas sejam visíveis */
+}
+
+.styled thead {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.styled th {
+    padding: 12px 10px; /* Reduzido ligeiramente o padding */
+    text-align: left;
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* Larguras específicas para colunas */
+.styled th:nth-child(1) { width: 80px; } /* ID */
+.styled th:nth-child(2) { width: 200px; } /* Nome */
+.styled th:nth-child(3) { width: 140px; } /* CPF */
+.styled th:nth-child(4) { width: 150px; } /* Campus */
+.styled th:nth-child(5) { width: 180px; } /* Edital */
+.styled th:nth-child(6) { width: 120px; } /* Data Nasc. */
+.styled th:nth-child(7) { width: 100px; } /* Turno */
+.styled th:nth-child(8) { width: 100px; } /* Gênero */
+.styled th:nth-child(9) { width: 140px; } /* Inscrição */
+.styled th:nth-child(10) { width: 150px; } /* Situação */
+.styled th:nth-child(11) { width: 200px; } /* Motivo */
+
+.styled tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.styled tbody tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.styled td {
+    padding: 10px 8px; /* Reduzido ligeiramente o padding */
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Ajustes específicos para colunas de dados */
+.styled td:nth-child(2) { /* Nome */
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.styled td:nth-child(5) { /* Edital */
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Formulário de situação */
+.situacao-form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.situacao-form select {
+    padding: 6px 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 140px;
+}
+
+.situacao-form select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.situacao-form select option[value="sim"] {
+    color: #38a169;
+    font-weight: 600;
+}
+
+.situacao-form select option[value="nao"] {
+    color: #e53e3e;
+    font-weight: 600;
+}
+
+/* Campo de motivo */
+.motivo-input {
+    min-width: 200px;
+}
+
+.motivo-input form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.motivo-input input[type="text"] {
+    padding: 6px 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: white;
+    transition: all 0.3s ease;
+    flex: 1;
+    min-width: 120px;
+}
+
+.motivo-input input[type="text"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.motivo-input input[type="text"]::placeholder {
+    color: #a0aec0;
+    font-size: 0.8rem;
+}
+
+/* Badge */
+.badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Textos auxiliares */
+.muted {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* Paginação */
+.pagination {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: rgba(248, 249, 250, 0.8);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.pagination .btn {
+    padding: 8px 12px;
+    min-width: auto;
+}
+
+.pagination .muted {
+    padding: 0 8px;
+    font-size: 1.2rem;
+}
+
+/* Estados dos botões na paginação */
+.pagination .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.pagination .btn-ghost {
+    background: transparent;
+    color: #667eea;
+    border: 1px solid #667eea;
+}
+
+.pagination .btn-ghost:hover {
+    background: #667eea;
+    color: white;
+}
+
+/* Responsividade */
+@media (max-width: 1400px) {
+    .container-app {
+        max-width: 95%;
+        min-width: auto;
+    }
+    
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+    
+    .toolbar > * {
+        margin-left: 0 !important;
+    }
+    
+    .search-form {
+        max-width: none;
+        margin-left: 0;
+    }
+    
+    input[type="text"][name="editalDescricao"] {
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-app {
+        padding: 10px;
+        max-width: 100%;
+    }
+    
+    .hero {
+        padding: 20px;
+    }
+    
+    .title h1 {
+        font-size: 2rem;
+    }
+    
+    .styled {
+        font-size: 0.8rem;
+        min-width: 1200px;
+    }
+    
+    .styled th,
+    .styled td {
+        padding: 8px 6px;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+    
+    .search-text {
+        display: none;
+    }
+    
+    .search-button {
+        padding: 10px;
+    }
+    
+    .situacao-form select {
+        min-width: 120px;
+        font-size: 0.8rem;
+    }
+    
+    .motivo-input {
+        min-width: 150px;
+    }
+    
+    .pagination {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    input[type="text"][name="editalDescricao"] {
+        min-width: 200px;
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero {
+        padding: 15px;
+    }
+    
+    .title h1 {
+        font-size: 1.5rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .toolbar form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    input[type="file"] {
+        width: 100%;
+    }
+    
+    .styled {
+        font-size: 0.75rem;
+        min-width: 1100px;
+    }
+    
+    .situacao-form {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .situacao-form select {
+        min-width: 100px;
+    }
+    
+    .motivo-input form {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    input[type="text"][name="editalDescricao"] {
+        min-width: 100%;
+        font-size: 0.8rem;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.6s ease-out;
+}
+
+.styled tbody tr {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* Estados de foco e active */
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+}
+
+/* Scrollbar personalizada */
+.table-wrap::-webkit-scrollbar {
+    height: 10px;
+}
+
+.table-wrap::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 4px;
+}
+
+.table-wrap::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a6fd8, #6a42a0);
+}
+
+/* Indicadores visuais para situação */
+.situacao-habilitado {
+    color: #38a169;
+    font-weight: 600;
+}
+
+.situacao-nao-habilitado {
+    color: #e53e3e;
+    font-weight: 600;
+}

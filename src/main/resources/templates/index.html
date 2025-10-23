@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title th:text="${appName} + ' — Home'">EnergIF — Home</title>
+    <link rel="stylesheet" href="/css/home.css" />
+    
+</head>
+<body>
+<div class="container-app">
+    <div class="hero">
+        <div class="title">
+            <h1 th:text="${appName}">EnergIF</h1>
+            <div class="subtitle">Ferramenta simples para importar e gerenciar candidatos</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>O que você pode fazer</h2>
+        <div class="features">
+            <div class="feature">
+                <h3>Cadastro de Candidato</h3>
+                <p>Adicionar manualmente um candidato com CPF, data de nascimento, campus, turno e vínculo com um edital.</p>
+                <p><a th:href="@{/candidatos/novo}" class="btn btn-primary">Ir para cadastro</a></p>
+            </div>
+
+            <div class="feature">
+                <h3>Listar e importar</h3>
+                <p>Ver a lista de candidatos, importar um arquivo XLSX com múltiplos cadastros e filtrar por nome/campus/CPF.</p>
+                <p><a th:href="@{/candidatos/list}" class="btn btn-ghost">Ir para lista/import</a></p>
+            </div>
+
+            <div class="feature">
+                <h3>Cadastro de Campus</h3>
+                <p>Adicionar ou atualizar um campus com número de vagas reservadas e de ampla concorrência.</p>
+                <p><a th:href="@{/campus/novo}" class="btn btn-ghost">Cadastrar campus</a></p>
+            </div>
+
+            <div class="feature">
+                <h3>Vagas por Campus & Edital</h3>
+                <p>Visão administrativa das vagas por campus e edital — útil para verificar a importação e ajustes por edital.</p>
+                <p><a th:href="@{/campus-edital/list}" class="btn btn-ghost">Ver vagas por edital</a></p>
+            </div>
+        </div>
+
+        <hr />
+        <div class="notes-section">
+            <h3>Notas rápidas</h3>
+            <ul>
+                <li>Importador XLSX detecta cabeçalhos por aproximação — verifique se a coluna de CPF é nomeada exatamente como <code>CPF</code>.</li>
+                <li>A ordenação "Mais recentes" usa data e hora da inscrição para mostrar os cadastros mais novos primeiro.</li>
+                <li>Use o campo de pesquisa na lista para localizar candidatos por nome, campus ou CPF.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Efeito de digitação no subtítulo
+    document.addEventListener('DOMContentLoaded', function() {
+        const subtitle = document.querySelector('.subtitle');
+        const text = subtitle.textContent;
+        subtitle.textContent = '';
+        
+        let i = 0;
+        function typeWriter() {
+            if (i < text.length) {
+                subtitle.textContent += text.charAt(i);
+                i++;
+                setTimeout(typeWriter, 50);
+            }
+        }
+        
+        setTimeout(typeWriter, 1000);
+    });
+
+    // Efeito parallax suave
+    window.addEventListener('scroll', function() {
+        const scrolled = window.pageYOffset;
+        const hero = document.querySelector('.hero');
+        hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+    });
+</script>
+</body>
+</html>

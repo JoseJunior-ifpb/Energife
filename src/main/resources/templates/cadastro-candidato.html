@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Cadastro de Candidato</title>
+    <link rel="stylesheet" href="/css/cadastro.css" />
+    <style>
+        body { padding-top: 40px; }
+        .form-container { max-width: 720px; margin: 0 auto; }
+    </style>
+ </head>
+<body>
+<div class="container form-container">
+    <h1>Cadastro de Candidato</h1>
+    <form th:action="@{/candidatos}" th:object="${candidato}" method="post">
+        <div class="mb-3">
+            <label for="nome" class="form-label">Nome</label>
+            <input type="text" th:field="*{nome}" class="form-control" id="nome" placeholder="Nome completo" required />
+        </div>
+
+        <div class="mb-3">
+            <label for="cpf" class="form-label">CPF</label>
+            <input type="text" th:field="*{cpf}" class="form-control" id="cpf" placeholder="000.000.000-00" />
+        </div>
+
+        <div class="mb-3">
+            <label for="dataNascimento" class="form-label">Data de Nascimento</label>
+            <input type="date" th:field="*{dataNascimento}" class="form-control" id="dataNascimento" />
+        </div>
+
+        <div class="mb-3">
+            <label for="campusId" class="form-label">Campus</label>
+            <select name="campusId" id="campusId" class="form-control">
+                <option value="" th:if="${#lists.isEmpty(campuses)}">Nenhum campus cadastrado</option>
+                <option value="" th:unless="${#lists.isEmpty(campuses)}">-- selecione --</option>
+                <option th:each="cp : ${campuses}"
+                        th:value="${cp.id}"
+                        th:text="${cp.nome}">
+                </option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="numeroVagasReservadas" class="form-label">Vagas Reservadas (Campus)</label>
+            <input type="number" name="numeroVagasReservadas" class="form-control" id="numeroVagasReservadas" placeholder="0" />
+        </div>
+
+        <div class="mb-3">
+            <label for="numeroVagasAmplaConcorrencia" class="form-label">Vagas Ampla Concorrência (Campus)</label>
+            <input type="number" name="numeroVagasAmplaConcorrencia" class="form-control" id="numeroVagasAmplaConcorrencia" placeholder="0" />
+        </div>
+
+        <div class="mb-3">
+            <label for="turno" class="form-label">Turno</label>
+            <input type="text" th:field="*{turno}" class="form-control" id="turno" placeholder="Manhã/Tarde/Noite" />
+        </div>
+
+        <div class="mb-3">
+            <label for="genero" class="form-label">Gênero</label>
+            <input type="text" th:field="*{genero}" class="form-control" id="genero" placeholder="M/F/O" maxlength="1" />
+        </div>
+
+        <div class="mb-3">
+            <label for="dataInscricao" class="form-label">Data de Inscrição</label>
+            <input type="date" th:field="*{dataInscricao}" class="form-control" id="dataInscricao" />
+        </div>
+
+        <div class="mb-3">
+            <label for="horaInscricao" class="form-label">Hora de Inscrição</label>
+            <input type="time" th:field="*{horaInscricao}" class="form-control" id="horaInscricao" />
+        </div>
+
+        <div class="mb-3">
+            <label for="edital" class="form-label">Edital (id)</label>
+            <input type="number" name="editalId" class="form-control" id="edital" placeholder="ID do edital" />
+        </div>
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a th:href="@{/}" class="btn btn-secondary">Cancelar</a>
+    <a th:href="@{/candidatos/list}" class="btn btn-info ms-2">Ver lista</a>
+    </form>
+
+    <div th:if="${success}" class="alert alert-success mt-3" role="alert">
+        Candidato salvo com sucesso!
+    </div>
+
+    <div th:if="${error}" class="alert alert-danger mt-3" role="alert">
+        Ocorreu um erro ao salvar o candidato.
+    </div>
+</div>
+</body>
+</html>

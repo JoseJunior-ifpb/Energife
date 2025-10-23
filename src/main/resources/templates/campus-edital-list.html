@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Vagas por Campus e Edital</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <style>
+        .filters { display:flex; gap:8px; margin-bottom:12px; align-items:center; }
+        table.styled { width:100%; border-collapse:collapse; }
+        table.styled th, table.styled td { padding:8px 12px; border-bottom:1px solid #eee; }
+    </style>
+</head>
+<body>
+<div class="container-app">
+    <div class="hero">
+        <div class="title">
+            <h1>Vagas por Campus & Edital</h1>
+            <div class="subtitle">Visualize as vagas reservadas e ampla por edital e campus</div>
+        </div>
+        <div class="toolbar">
+            <a th:href="@{/}" class="btn btn-ghost">Home</a>
+            <a th:href="@{/candidatos/list}" class="btn btn-ghost">Voltar para candidatos</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <form method="get" th:action="@{/campus-edital/list}" class="filters">
+            <select name="editalId">
+                <option value="">Todos os editais</option>
+                <option th:each="ed : ${editais}" th:value="${ed.id}" th:text="${ed.id}" th:selected="${ed.id == selectedEdital}"></option>
+            </select>
+
+            <select name="campusId">
+                <option value="">Todos os campus</option>
+                <option th:each="cp : ${campuses}" th:value="${cp.id}" th:text="${cp.nome}" th:selected="${cp.id == selectedCampus}"></option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">Filtrar</button>
+        </form>
+
+        <form method="post" th:action="@{/campus-edital/migrate}" onsubmit="return confirmMigration(this);" style="margin-top:12px; display:flex; gap:8px; align-items:center;">
+            <label for="migrateEdital">Migrar vagas de todos os campus para o Edital:</label>
+            <select id="migrateEdital" name="editalId" required>
+                <option value="" disabled selected>Escolha um edital</option>
+                <option th:each="ed : ${editais}" th:value="${ed.id}" th:text="${ed.id}"></option>
+            </select>
+            <button type="submit" class="btn btn-warning">Executar Migração</button>
+        </form>
+
+        <script>
+            function confirmMigration(form) {
+                const sel = document.getElementById('migrateEdital');
+                if (!sel || !sel.value) {
+                    alert('Selecione um edital para migrar');
+                    return false;
+                }
+                return confirm('Migrar os valores atuais de vagas de TODOS os campus para o edital ' + sel.value + '?\nEsta ação criará registros CampusEdital para campus que ainda não tenham um registro para esse edital.');
+            }
+        </script>
+
+        <div class="table-wrap">
+            <table class="styled">
+                <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Edital</th>
+                    <th>Vagas Reservadas</th>
+                    <th>Vagas Ampla</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="it : ${items}">
+                    <td th:text="${it.campus.nome}">Campus</td>
+                    <td th:text="${it.edital.id}">Edital</td>
+                    <td th:text="${it.numeroVagasReservadas}">0</td>
+                    <td th:text="${it.numeroVagasAmplaConcorrencia}">0</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(items)}"><td colspan="4" class="muted">Nenhum registro encontrado.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

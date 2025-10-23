@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Cadastro de Campus</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container-app {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .title h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+            font-weight: 400;
+        }
+
+        .toolbar {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .field {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-label::before {
+            content: "•";
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .form-control {
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #fafafa;
+            color: #1f2937;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .form-control::placeholder {
+            color: #9ca3af;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #6b7280;
+            border: 2px solid #e5e7eb;
+        }
+
+        .btn-ghost:hover {
+            background: #f8fafc;
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        /* Animações */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero, .card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .card {
+            animation-delay: 0.1s;
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+
+            .hero {
+                padding: 24px;
+            }
+
+            .card {
+                padding: 24px;
+            }
+
+            .title h1 {
+                font-size: 2rem;
+            }
+
+            .form-row {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Estados de validação */
+        .form-control:invalid:not(:focus) {
+            border-color: #ef4444;
+        }
+
+        .form-control:valid:not(:focus) {
+            border-color: #10b981;
+        }
+
+        /* Loading state */
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Ícones (usando emojis como fallback) */
+        .btn-ghost::before {
+            content: "←";
+            font-weight: bold;
+        }
+
+        .btn-primary::after {
+            content: "💾";
+        }
+    </style>
+</head>
+<body>
+<div class="container-app">
+    <div class="hero">
+        <div class="title">
+            <h1>Cadastro de Campus</h1>
+            <div class="subtitle">Adicione ou atualize informações do campus no sistema</div>
+        </div>
+        <div class="toolbar">
+            <a th:href="@{/candidatos/list}" class="btn btn-ghost">Voltar para Lista</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <form th:action="@{/campus}" th:object="${campus}" method="post" class="form-container">
+
+            <!-- Select to choose existing campus for editing -->
+            <div class="form-row" th:if="${campuses != null}">
+                <div class="field">
+                    <label class="form-label">Editar Campus existente</label>
+                    <select id="campusSelect" class="form-control">
+                        <option value="">-- selecione um campus para editar --</option>
+                        <option th:each="cp : ${campuses}"
+                                th:value="${cp.id}"
+                                th:attr="data-nome=${cp.nome},data-reservadas=${cp.numeroVagasReservadas},data-ampla=${cp.numeroVagasAmplaConcorrencia}"
+                                th:text="${cp.nome}">
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- hidden id to bind to Campus.id when editing -->
+            <input type="hidden" th:field="*{id}" />
+            <div class="form-row">
+                <div class="field">
+                    <label class="form-label">Nome do Campus</label>
+                    <input type="text" th:field="*{nome}" class="form-control" placeholder="Ex: Campus João Pessoa - Centro" required />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label class="form-label">Número de Vagas Reservadas</label>
+                    <input type="number" th:field="*{numeroVagasReservadas}" class="form-control" min="0" placeholder="0" />
+                </div>
+                <div class="field">
+                    <label class="form-label">Número de Vagas Ampla Concorrência</label>
+                    <input type="number" th:field="*{numeroVagasAmplaConcorrencia}" class="form-control" min="0" placeholder="0" />
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button type="submit" class="btn btn-primary">Salvar Campus</button>
+                <a th:href="@{/candidatos/list}" class="btn btn-ghost">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Feedback visual ao enviar o formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const btn = this.querySelector('.btn-primary');
+        const originalText = btn.textContent;
+        btn.innerHTML = 'Salvando...';
+        btn.disabled = true;
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 3000);
+    });
+
+    // Efeito de foco suave nos inputs
+    document.querySelectorAll('.form-control').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+    });
+
+    // Populate form when selecting an existing campus
+    const campusSelect = document.getElementById('campusSelect');
+    if (campusSelect) {
+        campusSelect.addEventListener('change', function() {
+            const sel = this.options[this.selectedIndex];
+            const id = this.value;
+            if (!id) {
+                // clear fields
+                document.querySelector('input[name="nome"]').value = '';
+                document.querySelector('input[name="numeroVagasReservadas"]').value = '';
+                document.querySelector('input[name="numeroVagasAmplaConcorrencia"]').value = '';
+                document.querySelector('input[name="id"]').value = '';
+                return;
+            }
+            const nome = sel.getAttribute('data-nome') || sel.textContent;
+            const reservadas = sel.getAttribute('data-reservadas') || '';
+            const ampla = sel.getAttribute('data-ampla') || '';
+
+            document.querySelector('input[name="nome"]').value = nome;
+            document.querySelector('input[name="numeroVagasReservadas"]').value = reservadas;
+            document.querySelector('input[name="numeroVagasAmplaConcorrencia"]').value = ampla;
+            document.querySelector('input[name="id"]').value = id;
+        });
+    }
+</script>
+</body>
+</html>
