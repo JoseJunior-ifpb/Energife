@@ -1,21 +1,29 @@
 package com.example.energif.web;
 
-import com.example.energif.model.Candidato;
-import com.example.energif.repository.CandidatoRepository;
-import com.example.energif.repository.CampusRepository;
-import com.example.energif.model.Campus;
-import org.springframework.web.bind.annotation.RequestParam;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.example.energif.model.Campus;
+import com.example.energif.model.Candidato;
+import com.example.energif.repository.CampusRepository;
+import com.example.energif.repository.CandidatoRepository;
 import com.example.energif.util.Filtro;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/candidatos")
@@ -108,41 +116,32 @@ public class CandidatoController {
     }
 
     @PostMapping
-    public String criar(@ModelAttribute Candidato candidato,
-                        @RequestParam(required = false) String campusId,
-                        @RequestParam(required = false) Integer numeroVagasReservadas,
-                        @RequestParam(required = false) Integer numeroVagasAmplaConcorrencia,
-                        @RequestParam(required = false) Long editalId,
-                        Model model) {
-        logger.info("Recebendo candidato para salvar: {}", candidato);
-        try {
-            // resolve campus if provided as id or nome
-            if (campusId != null && !campusId.isBlank()) {
-                try {
-                    Long cid = Long.parseLong(campusId);
-                    campusRepository.findById(cid).ifPresent(c -> {
-                        // set optional campus numeric params if provided
-                        if (numeroVagasReservadas != null) c.setNumeroVagasReservadas(numeroVagasReservadas);
-                        if (numeroVagasAmplaConcorrencia != null) c.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
-                        candidato.setCampus(c);
-                    });
-                } catch (NumberFormatException nfe) {
-                    Campus byName = campusRepository.findByNome(campusId);
-                    if (byName != null) {
-                        if (numeroVagasReservadas != null) byName.setNumeroVagasReservadas(numeroVagasReservadas);
-                        if (numeroVagasAmplaConcorrencia != null) byName.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
-                        candidato.setCampus(byName);
-                    }
-                }
+public String criar(@ModelAttribute Candidato candidato,
+                    @RequestParam(required = false) String campusId,
+                    Model model) {
+    logger.info("Recebendo candidato para salvar: {}", candidato);
+    try {
+        // Resolver campus baseado no ID ou nome
+        if (campusId != null && !campusId.isBlank()) {
+            Campus campus = resolveCampus(campusId);
+            if (campus != null) {
+                candidato.setCampus(campus);
+                logger.info("Campus associado: {}", campus.getNome());
             }
-            Candidato saved = candidatoService.salvarComAtualizacao(candidato, numeroVagasReservadas, numeroVagasAmplaConcorrencia, editalId);
-            logger.info("Candidato salvo: id={}", saved.getId());
-            return "redirect:/candidatos/novo?success";
-        } catch (Exception e) {
-            logger.error("Erro ao salvar candidato", e);
-            return "redirect:/candidatos/novo?error";
         }
+        
+        Candidato saved = candidatoService.salvarComAtualizacao(candidato);
+        logger.info("Candidato salvo: id={}, Campus: {}, Tipo Vaga: {}", 
+                   saved.getId(), 
+                   saved.getCampus() != null ? saved.getCampus().getNome() : "Nenhum",
+                   saved.getTipoVaga());
+        
+        return "redirect:/candidatos/novo?success";
+    } catch (Exception e) {
+        logger.error("Erro ao salvar candidato", e);
+        return "redirect:/candidatos/novo?error";
     }
+}
 
     @PostMapping("/import")
     public String importXlsx(@RequestPart("file") MultipartFile file,
@@ -178,32 +177,57 @@ public class CandidatoController {
         return "redirect:/candidatos/list?deleted=all";
     }
 
-    @PostMapping("/{id}/habilitar")
-    public Object habilitarCandidato(@org.springframework.web.bind.annotation.PathVariable("id") Long id,
-                                     @RequestParam(name = "situacao", required = false) String situacao,
-                                     @RequestParam(name = "motivo", required = false) String motivo,
-                                     jakarta.servlet.http.HttpServletRequest request) {
-        try {
-            var opt = candidatoRepository.findById(id);
-            if (opt.isPresent()) {
-                var c = opt.get();
-                boolean habil = "sim".equalsIgnoreCase(situacao);
-                c.setHabilitado(habil);
-                if (!habil) {
-                    c.setMotivoNaoHabilitacao(motivo);
-                } else {
-                    c.setMotivoNaoHabilitacao(null);
-                }
-                candidatoRepository.save(c);
-            }
-        } catch (Exception ex) {
-            logger.error("Erro ao atualizar situação do candidato {}", id, ex);
+    // No CandidatoController - método habilitarCandidato com logs detalhados:
+// No CandidatoController - atualize o método habilitarCandidato:
+@PostMapping("/{id}/habilitar")
+@ResponseBody
+public ResponseEntity<?> habilitarCandidato(@PathVariable("id") Long id,
+                                           @RequestParam(name = "situacao", required = false) String situacao,
+                                           @RequestParam(name = "motivo", required = false) String motivo,
+                                           HttpServletRequest request) {
+    
+    logger.info("=== SOLICITAÇÃO DE HABILITAÇÃO ===");
+    logger.info("Candidato ID: {}, Situação: {}, Motivo: {}", id, situacao, motivo);
+    
+    try {
+        Map<String, Object> resultado;
+        
+        if ("sim".equalsIgnoreCase(situacao)) {
+            logger.info("Tentando habilitar candidato {}", id);
+            resultado = candidatoService.habilitarCandidatoComFeedback(id, motivo);
+            logger.info("Resultado da habilitação: {}", resultado);
+        } else if ("nao".equalsIgnoreCase(situacao)) {
+            logger.info("Tentando desabilitar candidato {}", id);
+            candidatoService.desabilitarCandidato(id, motivo);
+            resultado = Map.of(
+                "sucesso", true,
+                "mensagem", "Candidato desabilitado com sucesso"
+            );
+        } else {
+            logger.warn("Situação inválida: {}", situacao);
+            resultado = Map.of(
+                "sucesso", false,
+                "mensagem", "Situação inválida: " + situacao
+            );
         }
-        // If the request is AJAX, return 200 OK without redirect so client JS can handle UI updates
-        String xrw = request.getHeader("X-Requested-With");
-        if ("XMLHttpRequest".equalsIgnoreCase(xrw)) {
-            return org.springframework.http.ResponseEntity.ok().build();
-        }
-        return "redirect:/candidatos/list";
+        
+        return ResponseEntity.ok(resultado);
+        
+    } catch (Exception ex) {
+        logger.error("ERRO ao atualizar situação do candidato {}", id, ex);
+        Map<String, Object> erro = Map.of(
+            "sucesso", false,
+            "mensagem", "Erro interno: " + ex.getMessage()
+        );
+        return ResponseEntity.badRequest().body(erro);
     }
+}
+    private Campus resolveCampus(String campusId) {
+    try {
+        Long cid = Long.parseLong(campusId);
+        return campusRepository.findById(cid).orElse(null);
+    } catch (NumberFormatException nfe) {
+        return campusRepository.findByNome(campusId);
+    }}
+    
 }

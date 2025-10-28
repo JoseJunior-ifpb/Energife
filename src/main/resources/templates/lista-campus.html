@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Lista de Campus</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <style>
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-top: 8px;
+        }
+        .vaga-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .vaga-item {
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .vaga-reservada {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .vaga-ampla {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .actions {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-success { background: #d4edda; color: #155724; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .status-danger { background: #f8d7da; color: #721c24; }
+        .edit-form {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .number-input {
+            width: 70px;
+            padding: 4px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .saving-indicator {
+            display: none;
+            color: #007bff;
+            font-size: 0.8rem;
+            margin-left: 8px;
+        }
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .campus-row {
+            transition: background-color 0.3s ease;
+        }
+        .campus-row.updating {
+            background-color: #fff3cd !important;
+        }
+        .campus-row.success {
+            background-color: #d4edda !important;
+        }
+        .campus-row.error {
+            background-color: #f8d7da !important;
+        }
+    </style>
+</head>
+<body>
+<div class="container-app">
+    <div class="hero">
+        <div class="title">
+            <h1>Lista de Campus</h1>
+            <div class="subtitle">Gerencie os campus e suas vagas</div>
+        </div>
+        <div class="toolbar">
+            <a th:href="@{/campus/novo}" class="btn btn-primary">Novo Campus</a>
+            <a th:href="@{/}" class="btn btn-ghost">Home</a>
+        </div>
+    </div>
+
+    <!-- Mensagens dinâmicas -->
+    <div id="successMessage" class="success-message"></div>
+    <div id="errorMessage" class="error-message"></div>
+
+    <!-- Estatísticas Gerais -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number" th:text="${campuses.size()}">0</div>
+            <div class="stat-label">Total de Campus</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalReservadas" th:text="${#aggregates.sum(campuses.![numeroVagasReservadas])}">0</div>
+            <div class="stat-label">Vagas Reservadas Totais</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalAmpla" th:text="${#aggregates.sum(campuses.![numeroVagasAmplaConcorrencia])}">0</div>
+            <div class="stat-label">Vagas Ampla Concorrência Totais</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalGeral" th:text="${#aggregates.sum(campuses.![numeroVagasReservadas + numeroVagasAmplaConcorrencia])}">0</div>
+            <div class="stat-label">Total de Vagas</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="styled">
+                <thead>
+                <tr>
+                    <th>Campus</th>
+                    <th>Vagas Reservadas</th>
+                    <th>Vagas Ampla Concorrência</th>
+                    <th>Total de Vagas</th>
+                    <th>Vagas Ocupadas</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+                </thead>
+                <tbody id="campusTableBody">
+                <tr th:each="campus : ${campuses}" th:id="'campus-row-' + ${campus.id}" class="campus-row">
+                    <td>
+                        <strong th:text="${campus.nome}">Nome do Campus</strong>
+                    </td>
+                    <td>
+                        <div>
+                            <span th:id="'vagas-reservadas-ocupadas-' + ${campus.id}" th:text="${campus.vagasReservadasOcupadas}">0</span> / 
+                            <span th:id="'vagas-reservadas-total-' + ${campus.id}" th:text="${campus.numeroVagasReservadas}">0</span>
+                            <div class="muted" style="font-size: 0.8rem;">
+                                <span th:id="'vagas-reservadas-disponiveis-' + ${campus.id}" th:text="${campus.vagasReservadasDisponiveis}">0</span> disponíveis
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <span th:id="'vagas-ampla-ocupadas-' + ${campus.id}" th:text="${campus.vagasAmplaOcupadas}">0</span> / 
+                            <span th:id="'vagas-ampla-total-' + ${campus.id}" th:text="${campus.numeroVagasAmplaConcorrencia}">0</span>
+                            <div class="muted" style="font-size: 0.8rem;">
+                                <span th:id="'vagas-ampla-disponiveis-' + ${campus.id}" th:text="${campus.vagasAmplaDisponiveis}">0</span> disponíveis
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <strong th:id="'total-vagas-' + ${campus.id}" th:text="${campus.numeroVagasReservadas + campus.numeroVagasAmplaConcorrencia}">0</strong>
+                    </td>
+                    <td>
+                        <strong th:id="'total-ocupadas-' + ${campus.id}" th:text="${campus.vagasReservadasOcupadas + campus.vagasAmplaOcupadas}">0</strong>
+                    </td>
+                    <td>
+                        <!-- Status simplificado - será atualizado via JavaScript -->
+                        <span th:id="'status-' + ${campus.id}" class="status-badge">
+                            <span th:if="${campus.vagasReservadasDisponiveis > 0 and campus.vagasAmplaDisponiveis > 0}" 
+                                  class="status-success">Vagas Disponíveis</span>
+                            <span th:if="${(campus.vagasReservadasDisponiveis <= 0 and campus.vagasAmplaDisponiveis > 0) or (campus.vagasReservadasDisponiveis > 0 and campus.vagasAmplaDisponiveis <= 0)}" 
+                                  class="status-warning">Vagas Limitadas</span>
+                            <span th:if="${campus.vagasReservadasDisponiveis <= 0 and campus.vagasAmplaDisponiveis <= 0}" 
+                                  class="status-danger">Sem Vagas</span>
+                        </span>
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <!-- Formulário de Edição com AJAX -->
+                            <form th:id="'edit-form-' + ${campus.id}" class="edit-form">
+                                <input type="number" th:id="'input-reservadas-' + ${campus.id}"
+                                       th:value="${campus.numeroVagasReservadas}" 
+                                       class="number-input" 
+                                       min="0" required />
+                                <input type="number" th:id="'input-ampla-' + ${campus.id}"
+                                       th:value="${campus.numeroVagasAmplaConcorrencia}" 
+                                       class="number-input" 
+                                       min="0" required />
+                                <button type="button" 
+                                        th:onclick="'atualizarCampus(' + ${campus.id} + ')'"
+                                        class="btn btn-sm btn-primary">
+                                    Atualizar
+                                </button>
+                                <span th:id="'saving-' + ${campus.id}" class="saving-indicator">Salvando...</span>
+                            </form>
+                            
+                            <!-- Botão Excluir com AJAX -->
+                            <button type="button" 
+                                    th:onclick="'excluirCampus(' + ${campus.id} + ', &quot;' + ${campus.nome} + '&quot;)'"
+                                    class="btn btn-sm btn-danger">
+                                Excluir
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(campuses)}">
+                    <td colspan="7" class="text-center muted">
+                        Nenhum campus cadastrado. 
+                        <a th:href="@{/campus/novo}">Cadastre o primeiro campus</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Informações -->
+    <div class="card" style="margin-top: 20px;">
+        <h3>Informações sobre as Vagas</h3>
+        <div class="vaga-info">
+            <div class="vaga-item vaga-reservada">
+                <strong>Vagas Reservadas</strong>
+                <div>Destinadas a candidatas do sexo feminino</div>
+            </div>
+            <div class="vaga-item vaga-ampla">
+                <strong>Vagas Ampla Concorrência</strong>
+                <div>Destinadas a candidatos do sexo masculino</div>
+            </div>
+        </div>
+        <div style="margin-top: 16px;">
+            <p><strong>Nota:</strong> O sistema determina automaticamente o tipo de vaga baseado no gênero do candidato.</p>
+            <ul>
+                <li><strong>Feminino</strong> → Concorre às <strong>Vagas Reservadas</strong></li>
+                <li><strong>Masculino</strong> → Concorre às <strong>Vagas Ampla Concorrência</strong></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// CSRF Token (se disponível)
+const _csrf = {
+    parameterName: /*[[${_csrf?.parameterName}]]*/ '_csrf',
+    token: /*[[${_csrf?.token}]]*/ ''
+};
+
+// Função para mostrar mensagem
+function showMessage(elementId, message, isError = false) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.style.display = 'block';
+    
+    if (isError) {
+        element.className = 'error-message';
+    } else {
+        element.className = 'success-message';
+    }
+    
+    setTimeout(() => {
+        element.style.display = 'none';
+    }, 5000);
+}
+
+// Função para atualizar campus via AJAX
+async function atualizarCampus(campusId) {
+    const reservadasInput = document.getElementById('input-reservadas-' + campusId);
+    const amplaInput = document.getElementById('input-ampla-' + campusId);
+    const savingIndicator = document.getElementById('saving-' + campusId);
+    const row = document.getElementById('campus-row-' + campusId);
+    
+    const numeroVagasReservadas = parseInt(reservadasInput.value) || 0;
+    const numeroVagasAmplaConcorrencia = parseInt(amplaInput.value) || 0;
+    
+    // Validação
+    if (numeroVagasReservadas < 0 || numeroVagasAmplaConcorrencia < 0) {
+        showMessage('errorMessage', 'O número de vagas não pode ser negativo.', true);
+        return;
+    }
+    
+    if (numeroVagasReservadas === 0 && numeroVagasAmplaConcorrencia === 0) {
+        if (!confirm('Ambos os tipos de vaga estão com 0 vagas. Tem certeza que deseja continuar?')) {
+            return;
+        }
+    }
+    
+    // Mostrar indicador de salvamento
+    savingIndicator.style.display = 'inline';
+    row.classList.add('updating');
+    
+    try {
+        const formData = new URLSearchParams();
+        formData.append('numeroVagasReservadas', numeroVagasReservadas);
+        formData.append('numeroVagasAmplaConcorrencia', numeroVagasAmplaConcorrencia);
+        if (_csrf.parameterName && _csrf.token) {
+            formData.append(_csrf.parameterName, _csrf.token);
+        }
+        
+        const response = await fetch('/campus/' + campusId + '/editar-ajax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Atualizar a linha com os novos dados
+            updateCampusRow(campusId, result.campus);
+            row.classList.remove('updating');
+            row.classList.add('success');
+            showMessage('successMessage', 'Campus atualizado com sucesso!');
+            
+            // Atualizar estatísticas gerais
+            updateEstatisticas();
+            
+            // Remover classe de sucesso após 2 segundos
+            setTimeout(() => {
+                row.classList.remove('success');
+            }, 2000);
+        } else {
+            showMessage('errorMessage', 'Erro ao atualizar campus: ' + result.error, true);
+            row.classList.remove('updating');
+            row.classList.add('error');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showMessage('errorMessage', 'Erro de rede ao atualizar campus.', true);
+        row.classList.remove('updating');
+        row.classList.add('error');
+    } finally {
+        savingIndicator.style.display = 'none';
+    }
+}
+
+// Função para atualizar os dados da linha
+function updateCampusRow(campusId, campusData) {
+    // Atualizar vagas reservadas
+    document.getElementById('vagas-reservadas-total-' + campusId).textContent = campusData.numeroVagasReservadas;
+    document.getElementById('vagas-reservadas-ocupadas-' + campusId).textContent = campusData.vagasReservadasOcupadas;
+    document.getElementById('vagas-reservadas-disponiveis-' + campusId).textContent = campusData.vagasReservadasDisponiveis;
+    
+    // Atualizar vagas ampla
+    document.getElementById('vagas-ampla-total-' + campusId).textContent = campusData.numeroVagasAmplaConcorrencia;
+    document.getElementById('vagas-ampla-ocupadas-' + campusId).textContent = campusData.vagasAmplaOcupadas;
+    document.getElementById('vagas-ampla-disponiveis-' + campusId).textContent = campusData.vagasAmplaDisponiveis;
+    
+    // Atualizar totais
+    document.getElementById('total-vagas-' + campusId).textContent = 
+        campusData.numeroVagasReservadas + campusData.numeroVagasAmplaConcorrencia;
+    document.getElementById('total-ocupadas-' + campusId).textContent = 
+        campusData.vagasReservadasOcupadas + campusData.vagasAmplaOcupadas;
+    
+    // Atualizar status
+    const statusElement = document.getElementById('status-' + campusId);
+    const reservadasDisponiveis = campusData.vagasReservadasDisponiveis;
+    const amplaDisponiveis = campusData.vagasAmplaDisponiveis;
+    
+    // Limpar conteúdo anterior
+    statusElement.innerHTML = '';
+    
+    if (reservadasDisponiveis > 0 && amplaDisponiveis > 0) {
+        statusElement.innerHTML = '<span class="status-success">Vagas Disponíveis</span>';
+    } else if ((reservadasDisponiveis <= 0 && amplaDisponiveis > 0) || (reservadasDisponiveis > 0 && amplaDisponiveis <= 0)) {
+        statusElement.innerHTML = '<span class="status-warning">Vagas Limitadas</span>';
+    } else {
+        statusElement.innerHTML = '<span class="status-danger">Sem Vagas</span>';
+    }
+}
+
+// Função para excluir campus via AJAX
+async function excluirCampus(campusId, campusNome) {
+    if (!confirm('Tem certeza que deseja excluir o campus "' + campusNome + '"? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    const row = document.getElementById('campus-row-' + campusId);
+    row.classList.add('updating');
+    
+    try {
+        const formData = new URLSearchParams();
+        if (_csrf.parameterName && _csrf.token) {
+            formData.append(_csrf.parameterName, _csrf.token);
+        }
+        
+        const response = await fetch('/campus/' + campusId + '/excluir-ajax', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Remover a linha da tabela
+            row.remove();
+            showMessage('successMessage', 'Campus excluído com sucesso!');
+            
+            // Atualizar estatísticas gerais
+            updateEstatisticas();
+            
+            // Verificar se não há mais campus
+            const tableBody = document.getElementById('campusTableBody');
+            if (tableBody.children.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center muted">
+                            Nenhum campus cadastrado. 
+                            <a href="/campus/novo">Cadastre o primeiro campus</a>
+                        </td>
+                    </tr>
+                `;
+            }
+        } else {
+            showMessage('errorMessage', 'Erro ao excluir campus: ' + result.error, true);
+            row.classList.remove('updating');
+            row.classList.add('error');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        showMessage('errorMessage', 'Erro de rede ao excluir campus.', true);
+        row.classList.remove('updating');
+        row.classList.add('error');
+    }
+}
+
+// Função para atualizar estatísticas gerais (simplificada)
+function updateEstatisticas() {
+    // Em uma implementação real, você poderia fazer uma nova requisição
+    // para obter as estatísticas atualizadas, ou calcular baseado nos dados visíveis
+    console.log('Estatísticas atualizadas - em uma implementação completa, isso seria dinâmico');
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Sistema de campus AJAX carregado');
+});
+</script>
+</body>
+</html>

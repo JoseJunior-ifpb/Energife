@@ -1,16 +1,5 @@
 package com.example.energif.util;
 
-import com.example.energif.model.Candidato;
-import com.example.energif.model.Campus;
-import com.example.energif.repository.CandidatoRepository;
-import com.example.energif.repository.CampusRepository;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -22,6 +11,25 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.DateUtil;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.example.energif.model.Campus;
+import com.example.energif.model.Candidato;
+import com.example.energif.model.TipoVaga;
+import com.example.energif.repository.CampusRepository;
+import com.example.energif.repository.CandidatoRepository;
 
 /**
  * Utility that reads an .xlsx file and imports rows into the Candidato table.
@@ -136,6 +144,7 @@ public class Filtro {
             map.put("cpf", cell.getColumnIndex());
             System.out.println(">>> CPF EXATO encontrado na coluna: " + cell.getColumnIndex());
         }
+        // REMOVIDO: busca por "tipo_vaga" pois agora é determinado pelo gênero
     }
     
     // Verificação se todas as colunas obrigatórias foram encontradas
@@ -156,100 +165,125 @@ public class Filtro {
 }
 
     private Candidato mapRowToCandidato(Row r, Map<String, Integer> cols) {
-        // read fields
-        String nome = getCellString(r, cols.get("nome"));
-        if (nome == null || nome.isBlank()) return null; // skip empty rows
+    // read fields
+    String nome = getCellString(r, cols.get("nome"));
+    if (nome == null || nome.isBlank()) return null; // skip empty rows
 
-        String rawCpf = getCellString(r, cols.get("cpf"));
-        String cpf = rawCpf;
-        if (cpf != null) {
-            // keep only digits to normalize CPF formatting and preserve leading zeros
-            cpf = cpf.replaceAll("\\D+", "");
-        }
-        // Log raw vs sanitized CPF for debugging; include row number
-        if (rawCpf != null && !rawCpf.isBlank()) {
-            log.debug("Row {}: raw CPF='{}' -> sanitized='{}'", r.getRowNum(), rawCpf, cpf);
-        }
-        String genero = getCellString(r, cols.get("genero"));
-
-        LocalDate dataNasc = getCellLocalDate(r, cols.get("dataNascimento"));
-
-        // timestamp -> dataInscricao + horaInscricao
-        LocalDate dataInscricao = null;
-        LocalTime horaInscricao = null;
-        if (cols.containsKey("timestamp")) {
-            Cell tsCell = r.getCell(cols.get("timestamp"));
-            if (tsCell != null && tsCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(tsCell)) {
-                Instant instant = tsCell.getDateCellValue().toInstant();
-                LocalDateTime ldt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-                dataInscricao = ldt.toLocalDate();
-                horaInscricao = ldt.toLocalTime();
-            } else {
-                // try parse as string
-                String s = getCellString(r, cols.get("timestamp"));
-                if (s != null && !s.isBlank()) {
-                    try {
-                        // try ISO
-                        LocalDateTime ldt = LocalDateTime.parse(s);
-                        dataInscricao = ldt.toLocalDate();
-                        horaInscricao = ldt.toLocalTime();
-                    } catch (Exception ignore) {
-                        // ignore parsing errors
-                    }
-                }
-            }
-        }
-
-        // campus and turno may be in the same column
-        String campusName = null;
-        String turno = null;
-        if (cols.containsKey("campus_turno")) {
-            String v = getCellString(r, cols.get("campus_turno"));
-            if (v != null) {
-                // try common separators
-                String[] parts = v.split("[-|,|/]", 2);
-                if (parts.length == 2) {
-                    campusName = parts[0].trim();
-                    turno = parts[1].trim();
-                } else {
-                    // try splitting by two or more spaces or new line, otherwise keep whole value as campus
-                    String[] ws = v.split("\\s{2,}|\\r?\\n");
-                    if (ws.length >= 2) {
-                        campusName = ws[0].trim();
-                        turno = ws[1].trim();
-                    } else {
-                        campusName = v.trim();
-                    }
-                }
-            }
-        } else {
-            campusName = getCellString(r, cols.get("campus"));
-            turno = getCellString(r, cols.get("turno"));
-        }
-
-        // resolve or create campus
-        Campus campus = null;
-        if (campusName != null && !campusName.isBlank()) {
-            campus = campusRepository.findByNome(campusName);
-            if (campus == null) {
-                campus = new Campus();
-                campus.setNome(campusName);
-                campus = campusRepository.save(campus);
-            }
-        }
-
-        Candidato c = new Candidato();
-        c.setNome(nome);
-        c.setCpf(cpf);
-        c.setGenero(genero != null && !genero.isBlank() ? genero.charAt(0) : null);
-        c.setDataNascimento(dataNasc);
-        c.setCampus(campus);
-        c.setTurno(turno);
-        c.setDataInscricao(dataInscricao);
-        c.setHoraInscricao(horaInscricao);
-
-        return c;
+    String rawCpf = getCellString(r, cols.get("cpf"));
+    String cpf = rawCpf;
+    if (cpf != null) {
+        cpf = cpf.replaceAll("\\D+", "");
     }
+    
+    if (rawCpf != null && !rawCpf.isBlank()) {
+        log.debug("Row {}: raw CPF='{}' -> sanitized='{}'", r.getRowNum(), rawCpf, cpf);
+    }
+    
+    String generoStr = getCellString(r, cols.get("genero"));
+    Character genero = null;
+    if (generoStr != null && !generoStr.isBlank()) {
+        // Normaliza o gênero para M ou F
+        if (generoStr.toUpperCase().startsWith("M") || generoStr.equalsIgnoreCase("Masculino")) {
+            genero = 'M';
+        } else if (generoStr.toUpperCase().startsWith("F") || generoStr.equalsIgnoreCase("Feminino")) {
+            genero = 'F';
+        }
+    }
+    
+    LocalDate dataNasc = getCellLocalDate(r, cols.get("dataNascimento"));
+
+    // timestamp -> dataInscricao + horaInscricao
+    LocalDate dataInscricao = null;
+    LocalTime horaInscricao = null;
+    if (cols.containsKey("timestamp")) {
+        Cell tsCell = r.getCell(cols.get("timestamp"));
+        if (tsCell != null && tsCell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(tsCell)) {
+            Instant instant = tsCell.getDateCellValue().toInstant();
+            LocalDateTime ldt = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            dataInscricao = ldt.toLocalDate();
+            horaInscricao = ldt.toLocalTime();
+        } else {
+            String s = getCellString(r, cols.get("timestamp"));
+            if (s != null && !s.isBlank()) {
+                try {
+                    LocalDateTime ldt = LocalDateTime.parse(s);
+                    dataInscricao = ldt.toLocalDate();
+                    horaInscricao = ldt.toLocalTime();
+                } catch (Exception ignore) {
+                }
+            }
+        }
+    }
+
+    // campus and turno may be in the same column
+    String campusName = null;
+    String turno = null;
+    if (cols.containsKey("campus_turno")) {
+        String v = getCellString(r, cols.get("campus_turno"));
+        if (v != null) {
+            String[] parts = v.split("[-|,|/]", 2);
+            if (parts.length == 2) {
+                campusName = parts[0].trim();
+                turno = parts[1].trim();
+            } else {
+                String[] ws = v.split("\\s{2,}|\\r?\\n");
+                if (ws.length >= 2) {
+                    campusName = ws[0].trim();
+                    turno = ws[1].trim();
+                } else {
+                    campusName = v.trim();
+                }
+            }
+        }
+    } else {
+        campusName = getCellString(r, cols.get("campus"));
+        turno = getCellString(r, cols.get("turno"));
+    }
+
+    // NOVA LÓGICA: Determinar tipo de vaga automaticamente pelo gênero
+    TipoVaga tipoVaga;
+    if (genero != null && genero == 'F') {
+        tipoVaga = TipoVaga.RESERVADA; // Mulheres concorrem a vagas reservadas
+        log.debug("Linha {}: Candidata mulher -> Vaga RESERVADA", r.getRowNum());
+    } else {
+        tipoVaga = TipoVaga.AMPLA_CONCORRENCIA; // Homens concorrem a ampla concorrência
+        log.debug("Linha {}: Candidato homem -> Vaga AMPLA CONCORRÊNCIA", r.getRowNum());
+    }
+
+    // resolve or create campus
+    Campus campus = null;
+    if (campusName != null && !campusName.isBlank()) {
+        campus = campusRepository.findByNome(campusName);
+        if (campus == null) {
+            campus = new Campus();
+            campus.setNome(campusName);
+            // Define valores padrão para vagas
+            campus.setNumeroVagasReservadas(10); // valor padrão para mulheres
+            campus.setNumeroVagasAmplaConcorrencia(10); // valor padrão para homens
+            campus.setVagasReservadasOcupadas(0);
+            campus.setVagasAmplaOcupadas(0);
+            campus = campusRepository.save(campus);
+            log.info("Novo campus criado: {} com vagas padrão", campusName);
+        }
+    }
+
+    Candidato c = new Candidato();
+    c.setNome(nome);
+    c.setCpf(cpf);
+    c.setGenero(genero);
+    c.setDataNascimento(dataNasc);
+    c.setCampus(campus);
+    c.setTurno(turno);
+    c.setDataInscricao(dataInscricao);
+    c.setHoraInscricao(horaInscricao);
+    c.setTipoVaga(tipoVaga); // Definido automaticamente pelo gênero
+    c.setHabilitado(false); // Por padrão, candidato não está habilitado
+
+    log.debug("Candidato mapeado: {} - Gênero: {} - Campus: {} - Tipo Vaga: {}", 
+              nome, genero, campusName, tipoVaga);
+    
+    return c;
+}
 
     // helpers
     private String safeString(Cell cell) {

@@ -1,11 +1,22 @@
 package com.example.energif.model;
 
-import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import lombok.Data;
+
 
 @Data
 @Entity
@@ -23,122 +34,30 @@ public class Candidato {
 
     @ManyToOne
     @JoinColumn(name = "campus_id")
-    private Campus campus;
+    private Campus campus; // Campus escolhido na inscrição
 
     private String turno;
-
     private Character genero;
-
     private LocalDate dataInscricao;
-
     private LocalTime horaInscricao;
 
     @ManyToOne
     @JoinColumn(name = "edital_id")
     private Edital edital;
 
-    // whether the candidate is habilitado for the edital/process
     private Boolean habilitado = Boolean.FALSE;
-    // motivo quando não habilitado
     private String motivoNaoHabilitacao;
 
-    @ManyToMany
-    @JoinTable(name = "candidato_vaga",
-            joinColumns = @JoinColumn(name = "candidato_id"),
-            inverseJoinColumns = @JoinColumn(name = "vaga_id"))
-    private Set<Vaga> vagasApplied = new HashSet<>();
+    // O candidato automaticamente concorre às vagas do seu campus
 
-    public void setCampus(Campus campus) {
-        this.campus = campus;
+    // Método para obter as vagas disponíveis do campus
+    public List<Vaga> getVagasDisponiveis() {
+        return this.campus != null ? this.campus.getVagas() : new ArrayList<>();
     }
 
-    public Campus getCampus() {
-        return this.campus;
-    }
-
-    public void setEdital(Edital edital) {
-        this.edital = edital;
-    }
-
-    public Edital getEdital() {
-        return this.edital;
-    }
-
-    public Long getId() {
-        return this.id;
-    }
-
-    // explicit getters/setters for form-bound properties
-    public String getNome() {
-        return this.nome;
-    }
-
-    public void setNome(String nome) {
-        this.nome = nome;
-    }
-
-    public String getCpf() {
-        return this.cpf;
-    }
-
-    public void setCpf(String cpf) {
-        this.cpf = cpf;
-    }
-
-    public LocalDate getDataNascimento() {
-        return this.dataNascimento;
-    }
-
-    public void setDataNascimento(LocalDate dataNascimento) {
-        this.dataNascimento = dataNascimento;
-    }
-
-    public String getTurno() {
-        return this.turno;
-    }
-
-    public void setTurno(String turno) {
-        this.turno = turno;
-    }
-
-    public Character getGenero() {
-        return this.genero;
-    }
-
-    public void setGenero(Character genero) {
-        this.genero = genero;
-    }
-
-    public LocalDate getDataInscricao() {
-        return this.dataInscricao;
-    }
-
-    public void setDataInscricao(LocalDate dataInscricao) {
-        this.dataInscricao = dataInscricao;
-    }
-
-    public LocalTime getHoraInscricao() {
-        return this.horaInscricao;
-    }
-
-    public void setHoraInscricao(LocalTime horaInscricao) {
-        this.horaInscricao = horaInscricao;
-    }
-
-    public Boolean getHabilitado() {
-        return this.habilitado;
-    }
-
-    public void setHabilitado(Boolean habilitado) {
-        this.habilitado = habilitado;
-    }
-
-    public String getMotivoNaoHabilitacao() {
-        return this.motivoNaoHabilitacao;
-    }
-
-    public void setMotivoNaoHabilitacao(String motivoNaoHabilitacao) {
-        this.motivoNaoHabilitacao = motivoNaoHabilitacao;
-    }
+    @Enumerated(EnumType.STRING)
+    private TipoVaga tipoVaga; // "RESERVADA" ou "AMPLA_CONCORRENCIA"
+    
+    // ... outros campos
 
 }

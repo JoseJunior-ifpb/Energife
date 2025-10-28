@@ -1,15 +1,24 @@
 package com.example.energif.web;
 
-import com.example.energif.model.Campus;
-import com.example.energif.repository.CampusRepository;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.example.energif.model.Campus;
+import com.example.energif.repository.CampusRepository;
 
 @Controller
 @RequestMapping("/campus")
@@ -26,10 +35,34 @@ public class CampusController {
     @GetMapping("/novo")
     public String novoForm(Model model) {
         model.addAttribute("campus", new Campus());
-        // include list of existing campuses so the form can offer a selection for editing
-        model.addAttribute("campuses", campusRepository.findAll(org.springframework.data.domain.Sort.by("nome")));
+        model.addAttribute("campuses", campusRepository.findAll(Sort.by("nome")));
         return "cadastro-campus";
     }
+
+    // No CampusController - método listarCampus:
+@GetMapping("/list")
+public String listarCampus(Model model) {
+    var campuses = campusRepository.findAll(Sort.by("nome"));
+    
+    // Inicializar valores nulos
+    for (Campus campus : campuses) {
+        if (campus.getNumeroVagasReservadas() == null) {
+            campus.setNumeroVagasReservadas(0);
+        }
+        if (campus.getNumeroVagasAmplaConcorrencia() == null) {
+            campus.setNumeroVagasAmplaConcorrencia(0);
+        }
+        if (campus.getVagasReservadasOcupadas() == null) {
+            campus.setVagasReservadasOcupadas(0);
+        }
+        if (campus.getVagasAmplaOcupadas() == null) {
+            campus.setVagasAmplaOcupadas(0);
+        }
+    }
+    
+    model.addAttribute("campuses", campuses);
+    return "lista-campus";
+}
 
     @PostMapping
     public String criar(@ModelAttribute Campus campus) {
@@ -45,4 +78,62 @@ public class CampusController {
         campusRepository.save(campus);
         return "redirect:/campus/novo?success";
     }
+
+    // CORREÇÃO: Usar @PathVariable em vez de @RequestParam
+    // No CampusController - adicione estes métodos:
+@PostMapping("/{id}/editar-ajax")
+@ResponseBody
+public ResponseEntity<?> editarCampusAjax(@PathVariable("id") Long id,
+                                         @RequestParam Integer numeroVagasReservadas,
+                                         @RequestParam Integer numeroVagasAmplaConcorrencia) {
+    try {
+        Campus campus = campusRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Campus não encontrado"));
+        
+        campus.setNumeroVagasReservadas(numeroVagasReservadas);
+        campus.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
+        Campus campusSalvo = campusRepository.save(campus);
+        
+        // Retornar os dados atualizados
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("campus", Map.of(
+            "id", campusSalvo.getId(),
+            "nome", campusSalvo.getNome(),
+            "numeroVagasReservadas", campusSalvo.getNumeroVagasReservadas(),
+            "numeroVagasAmplaConcorrencia", campusSalvo.getNumeroVagasAmplaConcorrencia(),
+            "vagasReservadasOcupadas", campusSalvo.getVagasReservadasOcupadas(),
+            "vagasAmplaOcupadas", campusSalvo.getVagasAmplaOcupadas(),
+            "vagasReservadasDisponiveis", campusSalvo.getVagasReservadasDisponiveis(),
+            "vagasAmplaDisponiveis", campusSalvo.getVagasAmplaDisponiveis()
+        ));
+        
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        logger.error("Erro ao editar campus {}", id, e);
+        return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+    }
+}
+
+@PostMapping("/{id}/excluir-ajax")
+@ResponseBody
+public ResponseEntity<?> excluirCampusAjax(@PathVariable("id") Long id) {
+    try {
+        Campus campus = campusRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Campus não encontrado"));
+        
+        if (campus.getCandidatos() != null && !((Sort) campus.getCandidatos()).isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false, 
+                "error", "Não é possível excluir o campus pois existem candidatos associados a ele."
+            ));
+        }
+        
+        campusRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("success", true));
+    } catch (Exception e) {
+        logger.error("Erro ao excluir campus {}", id, e);
+        return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+    }
+}
 }

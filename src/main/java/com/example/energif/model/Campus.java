@@ -1,9 +1,12 @@
 package com.example.energif.model;
 
 import jakarta.persistence.*;
- 
 import lombok.Data;
+import java.util.ArrayList;
+import java.util.List;
 
+
+// No Campus.java - garanta que os métodos estão assim:
 @Data
 @Entity
 @Table(name = "campus")
@@ -16,42 +19,76 @@ public class Campus {
     @Column(nullable = false, unique = true)
     private String nome;
 
-    private Integer numeroVagasReservadas;
-    private Integer numeroVagasAmplaConcorrencia;
+    private Integer numeroVagasReservadas = 0;
+    private Integer numeroVagasAmplaConcorrencia = 0;
+    
+    // VAGAS OCUPADAS - IMPORTANTE: inicializar com 0
+    private Integer vagasReservadasOcupadas = 0;
+    private Integer vagasAmplaOcupadas = 0;
 
-    // Removed collection mapping to Vaga because Vaga no longer contains a 'campus' property
+    // ... outros campos e relações
 
+    // MÉTODOS CORRIGIDOS - garantir que nunca retornem null
+    public boolean temVagaReservadaDisponivel() {
+        return getVagasReservadasDisponiveis() > 0;
+    }
+    
+    public boolean temVagaAmplaDisponivel() {
+        return getVagasAmplaDisponiveis() > 0;
+    }
+    
+    public Integer getVagasReservadasDisponiveis() {
+        int total = getNumeroVagasReservadas();
+        int ocupadas = getVagasReservadasOcupadas();
+        return Math.max(0, total - ocupadas);
+    }
+    
+    public Integer getVagasAmplaDisponiveis() {
+        int total = getNumeroVagasAmplaConcorrencia();
+        int ocupadas = getVagasAmplaOcupadas();
+        return Math.max(0, total - ocupadas);
+    }
 
+    // GETTERS E SETTERS SEGUROS - sempre retornam valores, nunca null
     public Integer getNumeroVagasReservadas() {
-        return numeroVagasReservadas;
+        return numeroVagasReservadas != null ? numeroVagasReservadas : 0;
     }
 
     public void setNumeroVagasReservadas(Integer numeroVagasReservadas) {
-        this.numeroVagasReservadas = numeroVagasReservadas;
+        this.numeroVagasReservadas = numeroVagasReservadas != null ? numeroVagasReservadas : 0;
     }
 
     public Integer getNumeroVagasAmplaConcorrencia() {
-        return numeroVagasAmplaConcorrencia;
+        return numeroVagasAmplaConcorrencia != null ? numeroVagasAmplaConcorrencia : 0;
     }
 
     public void setNumeroVagasAmplaConcorrencia(Integer numeroVagasAmplaConcorrencia) {
-        this.numeroVagasAmplaConcorrencia = numeroVagasAmplaConcorrencia;
+        this.numeroVagasAmplaConcorrencia = numeroVagasAmplaConcorrencia != null ? numeroVagasAmplaConcorrencia : 0;
     }
 
-    // Explicit getters/setters for 'id' and 'nome' to ensure Thymeleaf/SPEL can access them at runtime
-    public Long getId() {
-        return id;
+    public Integer getVagasReservadasOcupadas() {
+        return vagasReservadasOcupadas != null ? vagasReservadasOcupadas : 0;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setVagasReservadasOcupadas(Integer vagasReservadasOcupadas) {
+        this.vagasReservadasOcupadas = vagasReservadasOcupadas != null ? vagasReservadasOcupadas : 0;
     }
 
-    public String getNome() {
-        return nome;
+    public Integer getVagasAmplaOcupadas() {
+        return vagasAmplaOcupadas != null ? vagasAmplaOcupadas : 0;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setVagasAmplaOcupadas(Integer vagasAmplaOcupadas) {
+        this.vagasAmplaOcupadas = vagasAmplaOcupadas != null ? vagasAmplaOcupadas : 0;
+    }
+
+    public List<Vaga> getVagas() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getVagas'");
+    }
+
+    public Object getCandidatos() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getCandidatos'");
     }
 }

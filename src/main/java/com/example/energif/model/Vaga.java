@@ -13,7 +13,12 @@ public class Vaga {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "cpf_candidato")
-    private Candidato cpfCandidato;
+    @JoinColumn(name = "campus_id")
+    private Campus campus;
 
+    // Tipo da vaga: "RESERVADA" ou "AMPLA_CONCORRENCIA"
+    private String tipoVaga;
+
+    // REMOVIDO: @ManyToMany com Candidato
+    // A relação é indireta através do Campus
 }
