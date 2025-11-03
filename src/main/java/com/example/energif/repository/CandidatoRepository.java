@@ -28,20 +28,23 @@ public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
 	Page<Candidato> searchByCampus(@Param("q") String q, @Param("campusId") Long campusId, @Param("genero") Character genero, Pageable pageable);
 
     // Combined search supporting q, campusId, genero and age group (maior/minor de 18 anos)
-    @Query(value = "SELECT c.* FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
-	    "WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
-	    "AND (:campusId IS NULL OR cp.id = :campusId) " +
-	    "AND (:genero IS NULL OR c.genero = :genero) " +
-	    "AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years')))",
-	    countQuery = "SELECT count(c.id) FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
-		    "WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
-		    "AND (:campusId IS NULL OR cp.id = :campusId) " +
-		    "AND (:genero IS NULL OR c.genero = :genero) " +
-		    "AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years')))",
-	    nativeQuery = true)
-    Page<Candidato> searchCombined(@Param("q") String q,
+	@Query(value = "SELECT c.* FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
+	"WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
+	"AND (:campusId IS NULL OR cp.id = :campusId) " +
+	"AND (:genero IS NULL OR c.genero = :genero) " +
+	"AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
+	"AND (:habilitado IS NULL OR c.habilitado = :habilitado)",
+	countQuery = "SELECT count(c.id) FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
+		"WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
+		"AND (:campusId IS NULL OR cp.id = :campusId) " +
+		"AND (:genero IS NULL OR c.genero = :genero) " +
+		"AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
+		"AND (:habilitado IS NULL OR c.habilitado = :habilitado)",
+	nativeQuery = true)
+	Page<Candidato> searchCombined(@Param("q") String q,
 				   @Param("campusId") Long campusId,
 				   @Param("genero") Character genero,
 				   @Param("idade") String idade,
+				   @Param("habilitado") Boolean habilitado,
 				   Pageable pageable);
 }

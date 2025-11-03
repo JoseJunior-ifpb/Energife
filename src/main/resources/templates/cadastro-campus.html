@@ -3,246 +3,184 @@
 <head>
     <meta charset="UTF-8" />
     <title>Cadastro de Campus</title>
-    <link rel="stylesheet" href="/css/styles.css" />
+    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        /* Variáveis de Cores */
+:root {
+    --primary-color: #007bff; /* Azul vibrante para ações principais */
+    --primary-hover: #0056b3; /* Azul mais escuro ao passar o mouse */
+    --secondary-color: #6c757d; /* Cinza para elementos secundários */
+    --background-light: #f8f9fa; /* Fundo leve */
+    --background-white: #ffffff; /* Fundo do cartão/card */
+    --text-color-dark: #343a40; /* Cor de texto principal */
+    --text-color-light: #6c757d; /* Cor de texto secundário */
+    --border-color: #ced4da; /* Cor da borda padrão */
+    --focus-ring-color: rgba(0, 123, 255, 0.25); /* Anel de foco suave */
+}
 
-        body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+/* Base Geral */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--background-light);
+    color: var(--text-color-dark);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+}
 
-        .container-app {
-            max-width: 800px;
-            margin: 0 auto;
-        }
+/* Layout Principal */
+.container-app {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
 
-        .hero {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            margin-bottom: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+/* Cabeçalho (Hero/Toolbar) */
+.hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border-color);
+}
 
-        .title h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 8px;
-        }
+.title h1 {
+    font-size: 2.2em;
+    margin: 0 0 5px 0;
+    color: var(--primary-color);
+}
 
-        .subtitle {
-            color: #6b7280;
-            font-size: 1.1rem;
-            font-weight: 400;
-        }
+.subtitle {
+    font-size: 1em;
+    color: var(--text-color-light);
+    margin-bottom: 5px;
+}
 
-        .toolbar {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+/* Card Principal do Formulário */
+.card {
+    background-color: var(--background-white);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
 
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+/* Estrutura do Formulário */
+.form-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Espaço entre as linhas do formulário */
+}
 
-        .form-container {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
+.form-row {
+    display: flex;
+    gap: 20px; /* Espaço entre campos na mesma linha */
+}
 
-        .form-row {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-        }
+.form-row .field {
+    flex: 1; /* Faz com que os campos ocupem o mesmo espaço */
+    transition: transform 0.3s ease-out; /* Transição para o efeito de foco JS */
+}
 
-        .field {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
+/* Rótulos */
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-color-dark);
+    font-size: 0.95em;
+}
 
-        .form-label {
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+/* Inputs e Selects */
+.form-control {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1em;
+    color: var(--text-color-dark);
+    box-sizing: border-box; /* Garante que padding e border não aumentem a largura total */
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
 
-        .form-label::before {
-            content: "•";
-            color: #667eea;
-            font-weight: bold;
-        }
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--focus-ring-color);
+}
 
-        .form-control {
-            padding: 14px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: #fafafa;
-            color: #1f2937;
-        }
+/* Botões */
+.action-buttons {
+    display: flex;
+    justify-content: flex-start;
+    gap: 15px;
+    margin-top: 10px;
+}
 
-        .form-control:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            transform: translateY(-1px);
-        }
+.btn {
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    display: inline-block;
+    text-align: center;
+    border: none;
+}
 
-        .form-control::placeholder {
-            color: #9ca3af;
-        }
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--background-white);
+}
 
-        .btn {
-            padding: 14px 28px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+}
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
+.btn-ghost {
+    background-color: transparent;
+    color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+}
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-        }
+.btn-ghost:hover:not(:disabled) {
+    background-color: var(--background-light);
+    border-color: var(--secondary-color);
+    color: var(--text-color-dark);
+}
 
-        .btn-ghost {
-            background: transparent;
-            color: #6b7280;
-            border: 2px solid #e5e7eb;
-        }
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 
-        .btn-ghost:hover {
-            background: #f8fafc;
-            border-color: #667eea;
-            color: #667eea;
-            transform: translateY(-1px);
-        }
+/* Estilo para o botão no toolbar */
+.toolbar .btn {
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
 
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 8px;
-        }
+/* Responsividade */
+@media (max-width: 768px) {
+    .hero {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-        /* Animações */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+    .toolbar {
+        margin-top: 15px;
+    }
 
-        .hero, .card {
-            animation: fadeInUp 0.6s ease-out;
-        }
+    .form-row {
+        flex-direction: column;
+        gap: 15px; /* Reduz o espaço em telas menores */
+    }
 
-        .card {
-            animation-delay: 0.1s;
-        }
-
-        /* Responsividade */
-        @media (max-width: 768px) {
-            body {
-                padding: 16px;
-            }
-
-            .hero {
-                padding: 24px;
-            }
-
-            .card {
-                padding: 24px;
-            }
-
-            .title h1 {
-                font-size: 2rem;
-            }
-
-            .form-row {
-                flex-direction: column;
-                gap: 16px;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-        }
-
-        /* Estados de validação */
-        .form-control:invalid:not(:focus) {
-            border-color: #ef4444;
-        }
-
-        .form-control:valid:not(:focus) {
-            border-color: #10b981;
-        }
-
-        /* Loading state */
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        /* Ícones (usando emojis como fallback) */
-        .btn-ghost::before {
-            content: "←";
-            font-weight: bold;
-        }
-
-        .btn-primary::after {
-            content: "💾";
-        }
+    .card {
+        padding: 20px;
+    }
+}
     </style>
 </head>
 <body>

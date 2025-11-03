@@ -64,6 +64,7 @@ public class CandidatoController {
         @RequestParam(name = "campusId", required = false) Long campusId,
     @RequestParam(name = "genero", required = false) String genero,
     @RequestParam(name = "idade", required = false) String idade,
+    @RequestParam(name = "habilitado", required = false) String habilitado,
             @RequestParam(name = "page", required = false, defaultValue = "0") int page,
             @RequestParam(name = "size", required = false, defaultValue = "20") int size,
             Model model) {
@@ -73,7 +74,13 @@ public class CandidatoController {
     Character generoChar = (generoNorm != null && !generoNorm.isEmpty()) ? generoNorm.charAt(0) : null;
     String idadeNorm = (idade != null && !idade.isBlank()) ? idade.trim() : null;
 
-    boolean usingFilters = (q != null && !q.isBlank()) || campusId != null || generoChar != null || (idadeNorm != null && !idadeNorm.isBlank());
+    // normalize habilitado param: expected values 'sim' / 'nao' or empty
+    String habilitadoNorm = (habilitado != null && !habilitado.isBlank()) ? habilitado.trim().toLowerCase() : null;
+    Boolean habilitadoFilter = null;
+    if ("sim".equals(habilitadoNorm)) habilitadoFilter = Boolean.TRUE;
+    else if ("nao".equals(habilitadoNorm)) habilitadoFilter = Boolean.FALSE;
+
+    boolean usingFilters = (q != null && !q.isBlank()) || campusId != null || generoChar != null || (idadeNorm != null && !idadeNorm.isBlank()) || habilitadoFilter != null;
 
         org.springframework.data.domain.Sort sort;
         if (usingFilters) {
@@ -97,7 +104,7 @@ public class CandidatoController {
         // Prepare a lowercase trimmed q for queries that compare with lower(...)
         String qParam = (q != null && !q.isBlank()) ? q.trim().toLowerCase() : null;
         if (usingFilters) {
-            pageResult = candidatoRepository.searchCombined(qParam, campusId, generoChar, idadeNorm, pageable);
+            pageResult = candidatoRepository.searchCombined(qParam, campusId, generoChar, idadeNorm, habilitadoFilter, pageable);
         } else {
             pageResult = candidatoRepository.findAll(pageable);
         }
@@ -107,6 +114,7 @@ public class CandidatoController {
     model.addAttribute("selectedCampus", campusId);
     model.addAttribute("selectedGenero", generoNorm);
     model.addAttribute("selectedIdade", idadeNorm);
+    model.addAttribute("selectedHabilitado", habilitadoNorm);
     model.addAttribute("campuses", campusRepository.findAll());
         model.addAttribute("candidatosPage", pageResult);
         model.addAttribute("candidatos", pageResult.getContent());

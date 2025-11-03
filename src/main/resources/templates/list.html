@@ -17,8 +17,8 @@
             <a th:href="@{/}" class="btn btn-ghost">Home</a>
             <div style="margin-left:12px;display:flex;align-items:center;gap:8px">
                 <label class="muted" style="font-size:0.9rem">Ordenar por:</label>
-                <a th:href="@{/candidatos/list(order='newest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero})}" th:classappend="${selectedOrder=='newest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais recentes</a>
-                <a th:href="@{/candidatos/list(order='oldest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero})}" th:classappend="${selectedOrder=='oldest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais antigos</a>
+                <a th:href="@{/candidatos/list(order='newest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, habilitado=${selectedHabilitado})}" th:classappend="${selectedOrder=='newest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais recentes</a>
+                <a th:href="@{/candidatos/list(order='oldest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, habilitado=${selectedHabilitado})}" th:classappend="${selectedOrder=='oldest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais antigos</a>
             </div>
             <form th:action="@{/candidatos/list}" method="get" style="margin-left:12px; display:inline-flex; align-items:center; gap:8px">
                 <input type="hidden" name="order" th:value="${selectedOrder}" />
@@ -40,6 +40,12 @@
                     <option value="">Todos</option>
                     <option th:each="cp : ${campuses}" th:value="${cp.id}" th:text="${cp.nome}" th:selected="${cp.id == selectedCampus}"></option>
                 </select>
+                <label class="muted">Habilitado:</label>
+                <select name="habilitado">
+                    <option value="">Todos</option>
+                    <option value="sim" th:selected="${selectedHabilitado == 'sim'}">Habilitados</option>
+                    <option value="nao" th:selected="${selectedHabilitado == 'nao'}">Não habilitados</option>
+                </select>
                 <button type="submit" class="btn btn-ghost">Filtrar</button>
             </form>
 
@@ -48,6 +54,7 @@
     <input type="hidden" name="order" th:value="${selectedOrder}" />
     <input type="hidden" name="genero" th:value="${selectedGenero}" />
     <input type="hidden" name="idade" th:value="${selectedIdade}" />
+    <input type="hidden" name="habilitado" th:value="${selectedHabilitado}" />
     <div class="search-input-container">
         <input 
             type="text" 
@@ -142,30 +149,30 @@
 
             <!-- Previous -->
             <div>
-                <a th:if="${currentPage > 0}" th:href="@{/candidatos/list(page=${currentPage-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero})}" class="btn">&laquo; Anterior</a>
+                <a th:if="${currentPage > 0}" th:href="@{/candidatos/list(page=${currentPage-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}" class="btn">&laquo; Anterior</a>
                 <span th:if="${currentPage == 0}" class="btn disabled">&laquo; Anterior</span>
             </div>
 
             <!-- First + left ellipsis -->
             <div style="display:flex;gap:6px;align-items:center;">
-                <a th:if="${start > 0}" th:href="@{/candidatos/list(page=0,size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero})}" class="btn btn-ghost">1</a>
+                <a th:if="${start > 0}" th:href="@{/candidatos/list(page=0,size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}" class="btn btn-ghost">1</a>
                 <span th:if="${start > 1}" class="muted">&hellip;</span>
 
                 <!-- Page window -->
                 <span th:each="i : ${#numbers.sequence(start, end)}">
-                          <a th:href="@{/candidatos/list(page=${i},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero})}"
+                                  <a th:href="@{/candidatos/list(page=${i},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}"
                        th:classappend="${i == currentPage} ? ' btn-primary' : ' btn-ghost'"
                        th:text="${i+1}">1</a>
                 </span>
 
                 <!-- Right ellipsis + Last -->
                 <span th:if="${end < total - 2}" class="muted">&hellip;</span>
-                <a th:if="${end < total - 1}" th:href="@{/candidatos/list(page=${total-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero})}" class="btn btn-ghost" th:text="${total}">N</a>
+                <a th:if="${end < total - 1}" th:href="@{/candidatos/list(page=${total-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}" class="btn btn-ghost" th:text="${total}">N</a>
             </div>
 
             <!-- Next -->
             <div>
-                <a th:if="${currentPage < (total - 1)}" th:href="@{/candidatos/list(page=${currentPage+1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero})}" class="btn">Próximo &raquo;</a>
+                <a th:if="${currentPage < (total - 1)}" th:href="@{/candidatos/list(page=${currentPage+1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}" class="btn">Próximo &raquo;</a>
                 <span th:if="${currentPage >= (total - 1)}" class="btn disabled">Próximo &raquo;</span>
             </div>
 
