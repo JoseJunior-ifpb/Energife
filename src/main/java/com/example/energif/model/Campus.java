@@ -5,8 +5,6 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 
-
-// No Campus.java - garanta que os métodos estão assim:
 @Data
 @Entity
 @Table(name = "campus")
@@ -26,7 +24,13 @@ public class Campus {
     private Integer vagasReservadasOcupadas = 0;
     private Integer vagasAmplaOcupadas = 0;
 
-    // ... outros campos e relações
+    // RELAÇÃO COM CANDIDATOS - CORRIGIDA
+    @OneToMany(mappedBy = "campus", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Candidato> candidatos = new ArrayList<>();
+
+    // RELAÇÃO COM VAGAS - cada campus possui várias vagas
+    @OneToMany(mappedBy = "campus", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Vaga> vagas = new ArrayList<>();
 
     // MÉTODOS CORRIGIDOS - garantir que nunca retornem null
     public boolean temVagaReservadaDisponivel() {
@@ -82,13 +86,33 @@ public class Campus {
         this.vagasAmplaOcupadas = vagasAmplaOcupadas != null ? vagasAmplaOcupadas : 0;
     }
 
-    public List<Vaga> getVagas() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getVagas'");
+    // MÉTODO getCandidatos() CORRIGIDO
+    public List<Candidato> getCandidatos() {
+        return candidatos;
     }
 
-    public Object getCandidatos() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getCandidatos'");
+    public void setCandidatos(List<Candidato> candidatos) {
+        this.candidatos = candidatos;
+    }
+
+    // GETTERS E SETTERS PARA VAGAS
+    public List<Vaga> getVagas() {
+        return vagas;
+    }
+
+    public void setVagas(List<Vaga> vagas) {
+        this.vagas = vagas != null ? vagas : new ArrayList<>();
+    }
+
+    // MÉTODO PARA ADICIONAR CANDIDATO
+    public void addCandidato(Candidato candidato) {
+        candidatos.add(candidato);
+        candidato.setCampus(this);
+    }
+
+    // MÉTODO PARA REMOVER CANDIDATO
+    public void removeCandidato(Candidato candidato) {
+        candidatos.remove(candidato);
+        candidato.setCampus(null);
     }
 }

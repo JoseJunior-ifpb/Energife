@@ -12,9 +12,10 @@
             <h1>Lista de Candidatos</h1>
             <div class="subtitle">Visualize e gerencie os candidatos cadastrados</div>
         </div>
-        <div class="toolbar">
+                <div class="toolbar">
             <a th:href="@{/candidatos/novo}" class="btn btn-primary">Novo Candidato</a>
             <a th:href="@{/}" class="btn btn-ghost">Home</a>
+            <a th:href="@{/motivos/list}" class="btn btn-ghost">Motivos</a>
             <div style="margin-left:12px;display:flex;align-items:center;gap:8px">
                 <label class="muted" style="font-size:0.9rem">Ordenar por:</label>
                 <a th:href="@{/candidatos/list(order='newest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, habilitado=${selectedHabilitado})}" th:classappend="${selectedOrder=='newest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais recentes</a>
@@ -129,10 +130,15 @@
                     </td>
                     <td class="motivo-input" th:style="${cand.habilitado == true} ? 'display:none' : 'display:table-cell'">
                         <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post">
-                            <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <input type="hidden" name="situacao" value="nao" />
-                            <input type="text" name="motivo" th:value="${cand.motivoNaoHabilitacao}" placeholder="Motivo" />
-                            <button type="submit" class="btn btn-sm">Salvar</button>
+                        <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                        <input type="hidden" name="situacao" value="nao" />
+                        <select name="motivo">
+                        <option value="" th:selected="${cand.motivoNaoHabilitacao == null || cand.motivoNaoHabilitacao == ''}">Selecione um motivo</option>
+                        <option th:each="m : ${motivos}" th:value="${m.descricao}"
+                            th:text="${m.descricao}"
+                            th:selected="${m.descricao == cand.motivoNaoHabilitacao}"></option>
+                        </select>
+                        <button type="submit" class="btn btn-sm">Salvar</button>
                         </form>
                     </td>
                 </tr>
@@ -242,6 +248,10 @@
                 }
                 indicator.textContent = 'Salvando...';
 
+                // remove any previous feedback message in this row
+                let prevFeedback = tr.querySelector('.feedback-message');
+                if (prevFeedback) prevFeedback.remove();
+
                 try {
                     const fd = new FormData(form);
                     const res = await fetch(form.action, {
@@ -256,6 +266,24 @@
                         return;
                     }
 
+                    // parse JSON response from server
+                    let json = null;
+                    try {
+                        json = await res.json();
+                    } catch (e) {
+                        // not JSON — fall back to success
+                        json = { sucesso: true };
+                    }
+
+                    // If server indicates failure, show message
+                    if (json && json.sucesso === false) {
+                        indicator.textContent = 'Erro';
+                        setTimeout(() => indicator.textContent = '', 2000);
+                        const errMsg = json.mensagem || json.error || 'Erro ao atualizar situação';
+                        alert(errMsg);
+                        return;
+                    }
+
                     // If the selected situacao is 'nao', show motivo cell; otherwise hide it
                     const situacaoVal = (new FormData(form)).get('situacao');
                     const motivoCell = tr.querySelector('.motivo-input');
@@ -264,6 +292,32 @@
                     }
 
                     indicator.textContent = 'Salvo';
+
+                    // show transient feedback about remaining vacancies when present
+                    if (json && (json.vagasDisponiveis !== undefined || json.mensagem)) {
+                        const feedback = document.createElement('div');
+                        feedback.className = 'feedback-message muted';
+                        feedback.style.marginTop = '6px';
+                        feedback.style.fontSize = '0.9rem';
+                        if (json.vagasDisponiveis !== undefined && json.campusNome) {
+                            const tipo = json.tipoVaga ? (' (' + json.tipoVaga + ')') : '';
+                            feedback.textContent = `Vagas restantes em ${json.campusNome}${tipo}: ${json.vagasDisponiveis}`;
+                        } else if (json.mensagem) {
+                            feedback.textContent = json.mensagem;
+                        } else {
+                            feedback.textContent = 'Atualizado';
+                        }
+                        // append feedback to the cell that contains the situacao form (it's visible)
+                        const formCell = form.closest('td') || tr.querySelector('td:last-child') || tr;
+                        formCell.appendChild(feedback);
+                        // fade out after a few seconds
+                        setTimeout(() => {
+                            feedback.style.transition = 'opacity 0.6s';
+                            feedback.style.opacity = '0';
+                            setTimeout(() => feedback.remove(), 700);
+                        }, 3500);
+                    }
+
                     tr.style.transition = 'background-color 0.4s';
                     tr.style.backgroundColor = '#e6ffe6';
                     setTimeout(function() { tr.style.backgroundColor = ''; }, 700);

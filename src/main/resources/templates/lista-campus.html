@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>Lista de Campus</title>
     <style>
-         /* Reset e configurações básicas */
+        /* ===== RESET E CONFIGURAÇÕES BÁSICAS ===== */
         * {
             margin: 0;
             padding: 0;
@@ -13,9 +13,10 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f7fa;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
             line-height: 1.6;
+            min-height: 100vh;
         }
 
         .container-app {
@@ -24,24 +25,25 @@
             padding: 20px;
         }
 
-        /* Hero Section */
+        /* ===== HEADER E HERO SECTION ===== */
         .hero {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 1px solid #e1e5e9;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .title h1 {
             font-size: 2.5rem;
-            color: #2c3e50;
+            color: white;
             margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .subtitle {
-            color: #7f8c8d;
+            color: rgba(255, 255, 255, 0.8);
             font-size: 1.1rem;
         }
 
@@ -50,7 +52,7 @@
             gap: 10px;
         }
 
-        /* Botões */
+        /* ===== BOTÕES ===== */
         .btn {
             display: inline-block;
             padding: 10px 20px;
@@ -76,13 +78,13 @@
 
         .btn-ghost {
             background-color: transparent;
-            color: #7f8c8d;
-            border: 1px solid #bdc3c7;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .btn-ghost:hover {
-            background-color: #ecf0f1;
-            color: #2c3e50;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
         }
 
         .btn-sm {
@@ -101,7 +103,7 @@
             box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
         }
 
-        /* Cartões */
+        /* ===== CARDS ===== */
         .card {
             background-color: white;
             border-radius: 10px;
@@ -116,7 +118,7 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
-        /* Grid de Estatísticas */
+        /* ===== GRID DE ESTATÍSTICAS ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -149,15 +151,19 @@
             opacity: 0.9;
         }
 
-        /* Tabela */
+        /* ===== TABELA ===== */
         .table-wrap {
             overflow-x: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         table.styled {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         table.styled thead {
@@ -197,7 +203,7 @@
             background-color: #fdeded;
         }
 
-        /* Badges de Status */
+        /* ===== BADGES DE STATUS ===== */
         .status-badge span {
             padding: 5px 10px;
             border-radius: 20px;
@@ -220,7 +226,7 @@
             color: #721c24;
         }
 
-        /* Formulários */
+        /* ===== FORMULÁRIOS DE EDIÇÃO ===== */
         .edit-form {
             display: flex;
             gap: 10px;
@@ -228,19 +234,43 @@
             flex-wrap: wrap;
         }
 
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .input-label {
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
         .number-input {
-            width: 80px;
+            width: 90px;
             padding: 6px 10px;
             border: 1px solid #bdc3c7;
             border-radius: 4px;
             font-size: 0.9rem;
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
         }
 
         .number-input:focus {
             outline: none;
             border-color: #3498db;
             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Input específico para vagas reservadas */
+        .input-reservadas:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        /* Input específico para vagas ampla */
+        .input-ampla:focus {
+            border-color: #27ae60;
+            box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
         }
 
         .saving-indicator {
@@ -255,7 +285,7 @@
             gap: 8px;
         }
 
-        /* Informações sobre Vagas */
+        /* ===== INFORMAÇÕES SOBRE VAGAS ===== */
         .vaga-info {
             display: flex;
             gap: 20px;
@@ -290,7 +320,7 @@
             color: #7f8c8d;
         }
 
-        /* Mensagens */
+        /* ===== MENSAGENS DE FEEDBACK ===== */
         .success-message, .error-message {
             padding: 15px;
             border-radius: 6px;
@@ -311,7 +341,7 @@
             border-left: 4px solid #dc3545;
         }
 
-        /* Texto e Utilitários */
+        /* ===== TEXTOS E UTILITÁRIOS ===== */
         .muted {
             color: #7f8c8d;
         }
@@ -324,13 +354,28 @@
             color: #2c3e50;
         }
 
-        /* Animações */
+        /* ===== ANIMAÇÕES ===== */
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
         }
 
-        /* Responsividade */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: slideIn 0.5s ease;
+        }
+
+        /* ===== RESPONSIVIDADE ===== */
         @media (max-width: 768px) {
             .hero {
                 flex-direction: column;
@@ -349,6 +394,15 @@
             .edit-form {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .input-group {
+                width: 100%;
+            }
+            
+            .number-input {
+                width: 100%;
             }
             
             table.styled {
@@ -369,10 +423,16 @@
             .container-app {
                 padding: 10px;
             }
+            
+            .title h1 {
+                font-size: 2rem;
+            }
+            
+            .actions {
+                gap: 6px;
+            }
         }
     </style>
-    
-    
 </head>
 <body>
 <div class="container-app">
@@ -455,7 +515,6 @@
                         <strong th:id="'total-ocupadas-' + ${campus.id}" th:text="${campus.vagasReservadasOcupadas + campus.vagasAmplaOcupadas}">0</strong>
                     </td>
                     <td>
-                        <!-- Status simplificado - será atualizado via JavaScript -->
                         <span th:id="'status-' + ${campus.id}" class="status-badge">
                             <span th:if="${campus.vagasReservadasDisponiveis > 0 and campus.vagasAmplaDisponiveis > 0}" 
                                   class="status-success">Vagas Disponíveis</span>
@@ -469,14 +528,24 @@
                         <div class="actions">
                             <!-- Formulário de Edição com AJAX -->
                             <form th:id="'edit-form-' + ${campus.id}" class="edit-form">
-                                <input type="number" th:id="'input-reservadas-' + ${campus.id}"
-                                    th:value="${campus.numeroVagasReservadas}" 
-                                    class="number-input" 
-                                    min="0" required />
-                                <input type="number" th:id="'input-ampla-' + ${campus.id}"
-                                    th:value="${campus.numeroVagasAmplaConcorrencia}" 
-                                    class="number-input" 
-                                    min="0" required />
+                                <div class="input-group">
+                                    <label class="input-label">Reservadas</label>
+                                    <input type="number" 
+                                           th:id="'input-reservadas-' + ${campus.id}"
+                                           th:value="${campus.numeroVagasReservadas}" 
+                                           class="number-input input-reservadas" 
+                                           min="0" 
+                                           required />
+                                </div>
+                                <div class="input-group">
+                                    <label class="input-label">Ampla Concorrência</label>
+                                    <input type="number" 
+                                           th:id="'input-ampla-' + ${campus.id}"
+                                           th:value="${campus.numeroVagasAmplaConcorrencia}" 
+                                           class="number-input input-ampla" 
+                                           min="0" 
+                                           required />
+                                </div>
                                 <button type="button" 
                                         th:data-id="${campus.id}"
                                         class="btn btn-sm btn-primary btn-atualizar">
@@ -696,12 +765,9 @@ async function excluirCampus(campusId, campusNome) {
             
             // Verificar se não há mais campus
             const tableBody = document.getElementById('campusTableBody');
-            
-            // Contar apenas as linhas de dados (que têm a classe 'campus-row')
             const campusRows = tableBody.querySelectorAll('.campus-row');
             
             if (campusRows.length === 0) {
-                 // Insere o placeholder usando JavaScript
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center muted">
@@ -724,17 +790,15 @@ async function excluirCampus(campusId, campusNome) {
     }
 }
 
-// Função para atualizar estatísticas gerais (calculando a partir dos dados da tabela)
+// Função para atualizar estatísticas gerais
 function updateEstatisticas() {
     let totalReservadas = 0;
     let totalAmpla = 0;
     
-    // Seleciona todas as linhas de dados (que têm a classe 'campus-row')
     const rows = document.querySelectorAll('.campus-row');
     
     rows.forEach(row => {
         const campusId = row.id.split('-').pop();
-        // Obtém o valor total de vagas reservadas (o Thymeleaf garante que o elemento existe)
         const vagasReservadasTotal = parseInt(document.getElementById('vagas-reservadas-total-' + campusId).textContent) || 0;
         const vagasAmplaTotal = parseInt(document.getElementById('vagas-ampla-total-' + campusId).textContent) || 0;
         
@@ -745,42 +809,38 @@ function updateEstatisticas() {
     const totalGeral = totalReservadas + totalAmpla;
     const totalCampus = rows.length;
 
-    // Atualiza os cartões de estatísticas no topo
+    // Atualiza os cartões de estatísticas
     document.querySelector('.stat-card:nth-child(1) .stat-number').textContent = totalCampus;
     document.getElementById('totalReservadas').textContent = totalReservadas;
     document.getElementById('totalAmpla').textContent = totalAmpla;
     document.getElementById('totalGeral').textContent = totalGeral;
-    
-    console.log('Estatísticas globais atualizadas.');
 }
 
-// Inicialização: Adicionar event listeners aos botões
+// Inicialização
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Sistema de campus AJAX carregado');
 
-    // Usando delegação de evento no corpo da tabela para botões dinâmicos
     const tableBody = document.getElementById('campusTableBody');
     if (tableBody) {
         tableBody.addEventListener('click', function(event) {
+            const btnAtualizar = event.target.closest('.btn-atualizar');
+            const btnExcluir = event.target.closest('.btn-excluir');
             
-            // Listener para o botão de Atualizar
-            if (event.target.classList.contains('btn-atualizar')) {
-                const campusId = event.target.getAttribute('data-id');
-                // Adiciona um pequeno atraso para garantir que os inputs foram atualizados antes de buscar os valores
+            if (btnAtualizar) {
+                const campusId = btnAtualizar.getAttribute('data-id');
                 setTimeout(() => atualizarCampus(campusId), 0);
             }
             
-            // Listener para o botão de Excluir
-            if (event.target.classList.contains('btn-excluir')) {
-                const campusId = event.target.getAttribute('data-id');
-                const campusNome = event.target.getAttribute('data-nome');
+            if (btnExcluir) {
+                const campusId = btnExcluir.getAttribute('data-id');
+                const campusNome = btnExcluir.getAttribute('data-nome');
                 excluirCampus(campusId, campusNome);
             }
         });
     }
 
-    // Iniciar as estatísticas globais no carregamento
     updateEstatisticas();
-});</script>
+});
+</script>
 </body>
 </html>

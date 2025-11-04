@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Motivos</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="container-app">
+    <div class="hero">
+        <div class="title">
+            <h1>Motivos</h1>
+            <div class="subtitle">Gerencie motivos usados ao desabilitar candidatos</div>
+        </div>
+        <div class="toolbar">
+            <a th:href="@{/motivos/novo}" class="btn btn-primary">Novo Motivo</a>
+            <a th:href="@{/candidatos/list}" class="btn btn-ghost">Voltar</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="table-wrap">
+            <table class="styled">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Descrição</th>
+                    <th>Ações</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="m : ${motivos}">
+                    <td th:text="${m.id}">1</td>
+                    <td th:text="${m.descricao}">Descrição</td>
+                    <td>
+                        <a th:href="@{'/motivos/' + ${m.id} + '/editar'}" class="btn btn-sm btn-primary">Editar</a>
+                        <form th:action="@{'/motivos/' + ${m.id} + '/excluir'}" method="post" style="display:inline-block" onsubmit="return confirm('Confirma exclusão?');">
+                            <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="btn btn-sm btn-danger">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(motivos)}">
+                    <td colspan="3" class="muted text-center">Nenhum motivo cadastrado.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

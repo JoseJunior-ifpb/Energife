@@ -35,12 +35,14 @@ public class CandidatoController {
     private final CampusRepository campusRepository;
     private final Filtro filtro;
     private final com.example.energif.service.CandidatoService candidatoService;
+    private final com.example.energif.repository.MotivoRepository motivoRepository;
 
-    public CandidatoController(CandidatoRepository candidatoRepository, CampusRepository campusRepository, Filtro filtro, com.example.energif.service.CandidatoService candidatoService) {
+    public CandidatoController(CandidatoRepository candidatoRepository, CampusRepository campusRepository, Filtro filtro, com.example.energif.service.CandidatoService candidatoService, com.example.energif.repository.MotivoRepository motivoRepository) {
         this.candidatoRepository = candidatoRepository;
         this.campusRepository = campusRepository;
         this.filtro = filtro;
         this.candidatoService = candidatoService;
+        this.motivoRepository = motivoRepository;
     }
 
     @GetMapping("/novo")
@@ -82,6 +84,10 @@ public class CandidatoController {
 
     boolean usingFilters = (q != null && !q.isBlank()) || campusId != null || generoChar != null || (idadeNorm != null && !idadeNorm.isBlank()) || habilitadoFilter != null;
 
+    // Debug logging: show incoming params and whether filters will be applied
+    logger.info("Candidatos list request - order={}, q={}, campusId={}, genero={}, idade={}, habilitado={}, page={}, size={} → usingFilters={}",
+                order, q, campusId, generoChar, idadeNorm, habilitadoNorm, page, size, usingFilters);
+
         org.springframework.data.domain.Sort sort;
         if (usingFilters) {
             // native query expects DB column names for ORDER BY
@@ -100,6 +106,12 @@ public class CandidatoController {
         }
 
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        // defensive: ensure page is not negative (prevents IllegalArgumentException when PageRequest.of is called)
+        if (page < 0) {
+            logger.warn("Received negative page index ({}). Clamping to 0.", page);
+            page = 0;
+            pageable = org.springframework.data.domain.PageRequest.of(page, size, sort);
+        }
         org.springframework.data.domain.Page<com.example.energif.model.Candidato> pageResult;
         // Prepare a lowercase trimmed q for queries that compare with lower(...)
         String qParam = (q != null && !q.isBlank()) ? q.trim().toLowerCase() : null;
@@ -116,6 +128,7 @@ public class CandidatoController {
     model.addAttribute("selectedIdade", idadeNorm);
     model.addAttribute("selectedHabilitado", habilitadoNorm);
     model.addAttribute("campuses", campusRepository.findAll());
+    model.addAttribute("motivos", motivoRepository.findAll());
         model.addAttribute("candidatosPage", pageResult);
         model.addAttribute("candidatos", pageResult.getContent());
         model.addAttribute("currentPage", page);

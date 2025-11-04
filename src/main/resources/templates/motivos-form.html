@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Motivo</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+<div class="container-app">
+    <div class="hero">
+        <div class="title">
+            <h1 th:text="${motivo.id} != null ? 'Editar Motivo' : 'Novo Motivo'">Motivo</h1>
+        </div>
+        <div class="toolbar">
+            <a th:href="@{/motivos/list}" class="btn btn-ghost">Voltar</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <form th:action="@{/motivos/save}" method="post" th:object="${motivo}">
+            <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <input type="hidden" th:field="*{id}" />
+            <div style="display:flex;flex-direction:column;gap:10px;max-width:600px;">
+                <label>Descrição</label>
+                <input type="text" th:field="*{descricao}" required />
+                <div>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                    <a th:href="@{/motivos/list}" class="btn btn-ghost">Cancelar</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -704,37 +704,210 @@ input[type="file"]:focus {
 }
 
 /* Formulário de situação */
+/* Estilos para o formulário de situação */
 .situacao-form {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .situacao-form select {
     padding: 6px 10px;
-    border: 2px solid #e2e8f0;
+    border: 1px solid #d1d5db;
     border-radius: 6px;
-    font-size: 0.85rem;
-    background: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
+    background-color: white;
+    font-size: 0.875rem;
+    color: #374151;
     min-width: 140px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 8px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 30px;
 }
 
 .situacao-form select:focus {
     outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    ring: 2px solid #3b82f6;
+}
+
+.situacao-form select:hover {
+    border-color: #9ca3af;
+}
+
+.situacao-form select option {
+    padding: 8px;
+    font-size: 0.875rem;
 }
 
 .situacao-form select option[value="sim"] {
-    color: #38a169;
-    font-weight: 600;
+    color: #10b981;
+    font-weight: 500;
 }
 
 .situacao-form select option[value="nao"] {
-    color: #e53e3e;
-    font-weight: 600;
+    color: #ef4444;
+    font-weight: 500;
+}
+
+/* Estilo específico quando selecionado "Habilitado" */
+.situacao-form select:has(option[value="sim"]:checked) {
+    border-color: #10b981;
+    background-color: #f0fdf4;
+    color: #065f46;
+}
+
+/* Estilo específico quando selecionado "Não habilitado" */
+.situacao-form select:has(option[value="nao"]:checked) {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+    color: #991b1b;
+}
+
+.situacao-form .btn {
+    padding: 6px 12px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.situacao-form .btn:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.situacao-form .btn:active {
+    transform: translateY(0);
+}
+
+/* Estados do formulário */
+.situacao-form.saving {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.situacao-form.saving .btn {
+    background-color: #6b7280;
+    position: relative;
+}
+
+.situacao-form.saving .btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Transição suave para a exibição do motivo */
+.motivo-input {
+    transition: all 0.3s ease;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .situacao-form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    
+    .situacao-form select {
+        min-width: 100%;
+        margin-bottom: 4px;
+    }
+    
+    .situacao-form .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .situacao-form {
+        gap: 4px;
+    }
+    
+    .situacao-form select {
+        font-size: 0.8rem;
+        padding: 5px 8px;
+        padding-right: 28px;
+    }
+    
+    .situacao-form .btn {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+}
+
+/* Animações */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.situacao-form {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Feedback visual para mudanças de estado */
+.status-change {
+    position: relative;
+}
+
+.status-change::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 8px;
+    background: linear-gradient(45deg, #3b82f6, #10b981, #ef4444);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.status-change.changing::before {
+    opacity: 1;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 0.6; }
 }
 
 /* Campo de motivo */
@@ -1056,4 +1229,167 @@ input[type="file"]:focus {
 }
 
 
-/*  List campus */
+/*  Motivo css */
+/* Estilos para o formulário de motivo de não habilitação */
+.motivo-input {
+    vertical-align: middle;
+}
+
+.motivo-input form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.motivo-input select {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 0.875rem;
+    color: #374151;
+    min-width: 200px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.motivo-input select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    ring: 2px solid #3b82f6;
+}
+
+.motivo-input select:hover {
+    border-color: #9ca3af;
+}
+
+.motivo-input option {
+    padding: 8px;
+    font-size: 0.875rem;
+}
+
+.motivo-input .btn {
+    padding: 6px 12px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.motivo-input .btn:hover {
+    background-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.motivo-input .btn:active {
+    transform: translateY(0);
+}
+
+/* Estados de validação */
+.motivo-input select:invalid {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.motivo-input select:valid {
+    border-color: #10b981;
+    background-color: #f0fdf4;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .motivo-input form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+    }
+    
+    .motivo-input select {
+        min-width: 100%;
+        margin-bottom: 4px;
+    }
+    
+    .motivo-input .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Animações */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.motivo-input {
+    animation: slideIn 0.3s ease;
+}
+
+/* Estilo para quando o formulário está sendo enviado */
+.motivo-input form.saving {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.motivo-input form.saving .btn {
+    background-color: #6b7280;
+    position: relative;
+}
+
+.motivo-input form.saving .btn::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Estados de erro e sucesso */
+.motivo-input .error-message {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    display: none;
+}
+
+.motivo-input .success-message {
+    color: #10b981;
+    font-size: 0.75rem;
+    margin-top: 4px;
+    display: none;
+}
+
+.motivo-input.has-error select {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+}
+
+.motivo-input.has-success select {
+    border-color: #10b981;
+    background-color: #f0fdf4;
+}

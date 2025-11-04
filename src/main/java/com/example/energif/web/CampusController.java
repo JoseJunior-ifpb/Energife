@@ -27,9 +27,11 @@ public class CampusController {
     private static final Logger logger = LoggerFactory.getLogger(CampusController.class);
 
     private final CampusRepository campusRepository;
+    private final com.example.energif.repository.CampusEditalRepository campusEditalRepository;
 
-    public CampusController(CampusRepository campusRepository) {
+    public CampusController(CampusRepository campusRepository, com.example.energif.repository.CampusEditalRepository campusEditalRepository) {
         this.campusRepository = campusRepository;
+        this.campusEditalRepository = campusEditalRepository;
     }
 
     @GetMapping("/novo")
@@ -122,10 +124,22 @@ public ResponseEntity<?> excluirCampusAjax(@PathVariable("id") Long id) {
         Campus campus = campusRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Campus não encontrado"));
         
-        if (campus.getCandidatos() != null && !((Sort) campus.getCandidatos()).isEmpty()) {
+        // Verifica se há candidatos associados ao campus
+        // Agora getCandidatos() retorna List<Candidato>, então podemos usar isEmpty()
+        if (campus.getCandidatos() != null && !campus.getCandidatos().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false, 
-                "error", "Não é possível excluir o campus pois existem candidatos associados a ele."
+                "success", false,
+                "error", "Não é possível excluir o campus pois existem " + 
+                         campus.getCandidatos().size() + " candidatos associados a ele."
+            ));
+        }
+
+        // Verifica se há registros em campus_edital que referenciam este campus
+        java.util.List<com.example.energif.model.CampusEdital> vinculacoes = campusEditalRepository.findAllByCampusId(id);
+        if (vinculacoes != null && !vinculacoes.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", "Não é possível excluir o campus pois existem " + vinculacoes.size() + " vínculos com editais (remova-os primeiro)."
             ));
         }
         
