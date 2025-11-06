@@ -1,13 +1,74 @@
-🚀 Manual de Execução do Projeto Spring Boot (Energif)
-Este manual explica as configurações essenciais do projeto Spring Boot, nomeado energif, e como você pode executá-lo com sucesso, tanto localmente quanto acessível na sua rede.
-1. ⚙️ Visão Geral das Configurações (application.properties)
-As configurações fornecidas no arquivo application.properties (ou application.yml) definem o comportamento da aplicação em relação ao servidor, banco de dados e limites de upload.
-ConfiguraçãoDescriçãoValorspring.application.nameNome da aplicação (para logs/monitoramento).energifserver.portPorta de Acesso Local.8081server.addressInterface de rede na qual o
-servidor irá escutar.0.0.0.0 (Permite acesso de qualquer interface/dispositivo na rede local)spring.servlet.multipart.
-*Limites máximos para upload de arquivos.50MBspring.h2.console.enabledAtivação do console de gerenciamento do H2.truespring.h2.console.pathCaminho de acesso ao console H2 (se usando H2)./h2-consolespring.datasource.
-urlURL de Conexão com o PostgreSQL.jdbc:postgresql://localhost:5432/energifspring.datasource.usernameUsuário do banco de dados.postgresspring.datasource.passwordSenha do banco de dados.ifpbspring.jpa.hibernate.ddl-autoEstratégia de criação/atualização do esquema do DB.update2. 📝 Pré-requisitos para ExecuçãoAntes de rodar o projeto, certifique-se de que os seguintes requisitos estão instalados e configurados:Java Development Kit (JDK): Versão compatível com seu projeto (geralmente Java 17 ou mais recente).Gerenciador de Build: Maven ou Gradle (depende de como seu projeto foi configurado).Banco de Dados PostgreSQL: O servidor PostgreSQL deve estar instalado e em execução na porta padrão (5432) no seu ambiente local (localhost).Banco de Dados energif: Um banco de dados chamado energif deve existir no seu servidor PostgreSQL.Importante: Se o seu banco de dados PostgreSQL não estiver rodando, ou se a porta/nome do DB estiver incorreto, a aplicação falhará ao iniciar devido à configuração spring.datasource.url.3. ▶️ Como Iniciar a AplicaçãoExistem duas formas principais de iniciar sua aplicação Spring Boot:A. Execução via IDE (IntelliJ, VS Code, Eclipse)Abra o Projeto: Importe o projeto (energif) na sua IDE.Localize a Classe Principal: Encontre a classe principal da aplicação, que possui a anotação @SpringBootApplication (ex: EnergifApplication.java).Execute: Clique com o botão direito na classe principal e selecione "Run 'EnergifApplication.main()'" (ou o equivalente na sua IDE).B. Execução via Linha de Comando (Jar Executável)Se você já gerou o arquivo JAR executável do seu projeto, você pode rodá-lo diretamente:Gere o JAR (Se Necessário):Com Maven: Navegue até o diretório raiz do projeto e execute:Bash./mvnw clean package
-O arquivo JAR estará geralmente em target/ (ex: target/energif-0.0.1-SNAPSHOT.jar).Execute o JAR: Navegue até o diretório onde o arquivo JAR foi gerado e execute:Bashjava -jar nome-do-seu-arquivo.jar
-4. 🌐 Acesso à Aplicação e FerramentasUma vez que a aplicação inicie com sucesso (procure por mensagens de inicialização do Tomcat/Jetty e do Spring no console), você poderá acessá-la usando os seguintes URLs:A. Acesso Principal à AplicaçãoA aplicação estará acessível na porta 8081:http://localhost:8081/
-B. Acesso na Rede Local (Outros Dispositivos)Como server.address está definido como 0.0.0.0, outros dispositivos na mesma rede local podem acessar a aplicação usando o IP da máquina onde ela está rodando.Substitua SEU_IP_LOCAL (ex: 192.168.1.10) pelo endereço IP da sua máquina:http://SEU_IP_LOCAL:8081/
-C. Acesso ao Console H2O console H2 (para gerenciamento de banco de dados em memória, se você não estiver usando PostgreSQL, ou para testes) está ativo em:http://localhost:8081/h2-console
-Aviso: Embora o H2 esteja habilitado, sua aplicação está configurada para usar PostgreSQL. Se você estiver usando o PostgreSQL, ignore o console H2.⚠️ Solução de Problemas ComunsProblemaMensagem Comum (Exemplo)SoluçãoPorta OcupadaAddress already in use: bindAltere a porta em server.port para um valor não utilizado (ex: 8082) ou feche o processo que está usando a porta 8081.Conexão DB FalhouThe connection attempt failed.1. Verifique se o servidor PostgreSQL está rodando.2. Verifique se o banco de dados energif existe.3. Confirme se as credenciais (username=postgres, password=ifpb) estão corretas para o seu DB local.Classe Não Encontradajava.lang.ClassNotFoundException: org.postgresql.DriverCertifique-se de que a dependência do driver PostgreSQL (postgresql-driver) está incluída corretamente no seu arquivo pom.xml (Maven) ou build.gradle (Gradle).
+# 🚀 ENERGIF - Sistema de Gerenciamento de Candidatos
+
+Este repositório contém o código-fonte do sistema ENERGIF, desenvolvido em Spring Boot e utilizando PostgreSQL como banco de dados.
+
+## 📝 Visão Geral das Configurações
+
+O projeto utiliza o arquivo `application.properties` (ou similar) para definir as configurações essenciais de ambiente e banco de dados.
+
+| Configuração | Chave | Valor Padrão |
+| :--- | :--- | :--- |
+| **Nome da Aplicação** | `spring.application.name` | `energif` |
+| **Porta do Servidor** | `server.port` | **`8081`** |
+| **Endereço do Servidor** | `server.address` | `0.0.0.0` (Acessível na rede local) |
+| **Upload Máximo (Arquivos)** | `spring.servlet.multipart.max-file-size` | `50MB` |
+| **Upload Máximo (Requisição)** | `spring.servlet.multipart.max-request-size` | `50MB` |
+| **Dialeto JPA** | `spring.jpa.properties.hibernate.dialect` | `org.hibernate.dialect.PostgreSQLDialect` |
+| **DDL Hibernate** | `spring.jpa.hibernate.ddl-auto` | `update` (Cria/Atualiza o esquema automaticamente) |
+
+---
+
+## 🛠️ Pré-requisitos
+
+Para rodar a aplicação localmente, você precisa ter o seguinte instalado e configurado:
+
+1.  **Java Development Kit (JDK):** Versão 17 ou superior.
+2.  **Gerenciador de Build:** Maven ou Gradle.
+3.  **Banco de Dados PostgreSQL:**
+    * O servidor deve estar rodando (porta padrão: `5432`).
+    * Um banco de dados chamado **`energif`** deve ser criado.
+
+### Configuração do Banco de Dados
+
+As credenciais configuradas para acesso ao PostgreSQL são:
+
+| Parâmetro | Chave | Valor |
+| :--- | :--- | :--- |
+| **URL de Conexão** | `spring.datasource.url` | `jdbc:postgresql://localhost:5432/energif` |
+| **Usuário** | `spring.datasource.username` | `postgres` |
+| **Senha** | `spring.datasource.password` | `ifpb` |
+
+> ⚠️ **Atenção:** Se a sua senha de usuário `postgres` for diferente de `ifpb`, você deve alterar o valor no arquivo de configuração antes de iniciar a aplicação.
+
+---
+
+## ▶️ Como Executar o Projeto
+
+Você pode iniciar o projeto de duas maneiras principais: via IDE ou via JAR executável.
+
+### Opção 1: Via Linha de Comando (Recomendado para Produção)
+
+1.  **Geração do Pacote (JAR):**
+    Navegue até o diretório raiz do projeto e use o Maven Wrapper para compilar e empacotar:
+    ```bash
+    ./mvnw clean package
+    ```
+2.  **Execução:**
+    Execute o arquivo JAR gerado (encontrado no diretório `target/`):
+    ```bash
+    java -jar target/nome-do-seu-arquivo.jar
+    ```
+
+### Opção 2: Via IDE (Para Desenvolvimento)
+
+1.  Abra o projeto na sua IDE (IntelliJ, VS Code, Eclipse, etc.).
+2.  Localize a classe principal da aplicação (aquela com a anotação `@SpringBootApplication`, ex: `EnergifApplication.java`).
+3.  Execute a classe principal usando a função "Run" da sua IDE.
+
+---
+
+## 🌐 Acesso ao Sistema
+
+Após a inicialização bem-sucedida (o servidor deve estar escutando na porta `8081`), o sistema estará acessível nos seguintes endereços:
+
+### 1. Acesso Local (Na Máquina que Executa)
