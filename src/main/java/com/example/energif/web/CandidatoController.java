@@ -1,6 +1,8 @@
 package com.example.energif.web;
 
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +47,27 @@ public class CandidatoController {
         this.motivoRepository = motivoRepository;
     }
 
+    // Return list of duplicate CPFs and their counts as JSON
+    @GetMapping("/repetidos")
+    @ResponseBody
+    public ResponseEntity<List<Map<String, Object>>> candidatosRepetidos() {
+        try {
+            List<Object[]> rows = candidatoRepository.findDuplicateCpfs();
+            List<Map<String, Object>> out = new ArrayList<>();
+            for (Object[] r : rows) {
+                String cpf = r[0] != null ? r[0].toString() : null;
+                long total = 0;
+                if (r[1] instanceof Number) total = ((Number) r[1]).longValue();
+                else if (r[1] != null) total = Long.parseLong(r[1].toString());
+                out.add(Map.of("cpf", cpf, "total", total));
+            }
+            return ResponseEntity.ok(out);
+        } catch (Exception ex) {
+            logger.error("Erro ao listar candidatos repetidos", ex);
+            return ResponseEntity.status(500).body(List.of(Map.of("error", "Erro ao listar")));
+        }
+    }
+
     @GetMapping("/novo")
     public String novoForm(Model model) {
         model.addAttribute("candidato", new Candidato());
@@ -60,16 +83,17 @@ public class CandidatoController {
     }
 
     @GetMapping("/list")
-    public String listAll(
-            @RequestParam(name = "order", required = false, defaultValue = "newest") String order,
-        @RequestParam(name = "q", required = false) String q,
-        @RequestParam(name = "campusId", required = false) Long campusId,
+public String listAll(
+        @RequestParam(name = "order", required = false, defaultValue = "newest") String order,
+    @RequestParam(name = "q", required = false) String q,
+    @RequestParam(name = "campusId", required = false) Long campusId,
     @RequestParam(name = "genero", required = false) String genero,
     @RequestParam(name = "idade", required = false) String idade,
     @RequestParam(name = "habilitado", required = false) String habilitado,
-            @RequestParam(name = "page", required = false, defaultValue = "0") int page,
-            @RequestParam(name = "size", required = false, defaultValue = "20") int size,
-            Model model) {
+    @RequestParam(name = "turno", required = false) String turno, // Parâmetro recebido
+        @RequestParam(name = "page", required = false, defaultValue = "0") int page,
+        @RequestParam(name = "size", required = false, defaultValue = "20") int size,
+        Model model) {
 
     // normalize incoming filter params: treat empty strings as null
     String generoNorm = (genero != null && !genero.isBlank()) ? genero.trim().toUpperCase() : null;
@@ -81,12 +105,16 @@ public class CandidatoController {
     Boolean habilitadoFilter = null;
     if ("sim".equals(habilitadoNorm)) habilitadoFilter = Boolean.TRUE;
     else if ("nao".equals(habilitadoNorm)) habilitadoFilter = Boolean.FALSE;
+    
+    // NOVO: Normalize o parâmetro turno (String)
+    String turnoNorm = (turno != null && !turno.isBlank()) ? turno.trim() : null;
 
-    boolean usingFilters = (q != null && !q.isBlank()) || campusId != null || generoChar != null || (idadeNorm != null && !idadeNorm.isBlank()) || habilitadoFilter != null;
+    // MUDANÇA: Inclua 'turnoNorm' na verificação 'usingFilters'
+    boolean usingFilters = (q != null && !q.isBlank()) || campusId != null || generoChar != null || (idadeNorm != null && !idadeNorm.isBlank()) || habilitadoFilter != null || turnoNorm != null;
 
     // Debug logging: show incoming params and whether filters will be applied
-    logger.info("Candidatos list request - order={}, q={}, campusId={}, genero={}, idade={}, habilitado={}, page={}, size={} → usingFilters={}",
-                order, q, campusId, generoChar, idadeNorm, habilitadoNorm, page, size, usingFilters);
+    logger.info("Candidatos list request - order={}, q={}, campusId={}, genero={}, idade={}, habilitado={}, turno={}, page={}, size={} → usingFilters={}",
+                 order, q, campusId, generoChar, idadeNorm, habilitadoNorm, turnoNorm, page, size, usingFilters); // Use turnoNorm no log
 
         org.springframework.data.domain.Sort sort;
         if (usingFilters) {
@@ -115,8 +143,10 @@ public class CandidatoController {
         org.springframework.data.domain.Page<com.example.energif.model.Candidato> pageResult;
         // Prepare a lowercase trimmed q for queries that compare with lower(...)
         String qParam = (q != null && !q.isBlank()) ? q.trim().toLowerCase() : null;
+        
         if (usingFilters) {
-            pageResult = candidatoRepository.searchCombined(qParam, campusId, generoChar, idadeNorm, habilitadoFilter, pageable);
+            // MUDANÇA: Passando o novo parâmetro 'turnoNorm'
+            pageResult = candidatoRepository.searchCombined(qParam, campusId, generoChar, idadeNorm, habilitadoFilter, turnoNorm, pageable);
         } else {
             pageResult = candidatoRepository.findAll(pageable);
         }
@@ -127,14 +157,21 @@ public class CandidatoController {
     model.addAttribute("selectedGenero", generoNorm);
     model.addAttribute("selectedIdade", idadeNorm);
     model.addAttribute("selectedHabilitado", habilitadoNorm);
+    model.addAttribute("selectedTurno", turnoNorm); // MUDANÇA: Adicionando o valor normalizado ao modelo
     model.addAttribute("campuses", campusRepository.findAll());
     model.addAttribute("motivos", motivoRepository.findAll());
+    // provide list of distinct turnos for report/filter
+    try {
+        model.addAttribute("turnos", candidatoRepository.findDistinctTurno());
+    } catch (Exception ex) {
+        model.addAttribute("turnos", java.util.List.of());
+    }
         model.addAttribute("candidatosPage", pageResult);
         model.addAttribute("candidatos", pageResult.getContent());
         model.addAttribute("currentPage", page);
         model.addAttribute("pageSize", size);
         return "list";
-    }
+}
 
     @PostMapping
 public String criar(@ModelAttribute Candidato candidato,
@@ -243,6 +280,212 @@ public ResponseEntity<?> habilitarCandidato(@PathVariable("id") Long id,
         return ResponseEntity.badRequest().body(erro);
     }
 }
+
+    // Generate PDF report for a given campus and optional turno
+    @GetMapping("/report")
+    public void gerarRelatorio(@RequestParam(name = "campusId", required = false) Long campusId,
+                               @RequestParam(name = "turno", required = false) String turno,
+                               jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            // prepare filename
+            String filename = "relatorio_resultado_final.pdf";
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+            // build PDF using OpenPDF
+            com.lowagie.text.Document doc = new com.lowagie.text.Document();
+            com.lowagie.text.pdf.PdfWriter.getInstance(doc, response.getOutputStream());
+            doc.open();
+
+            com.lowagie.text.Font titleFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 16, com.lowagie.text.Font.BOLD);
+            com.lowagie.text.Font headerFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 12, com.lowagie.text.Font.BOLD);
+            com.lowagie.text.Font normalFont = new com.lowagie.text.Font(com.lowagie.text.Font.HELVETICA, 8);
+
+            // Header
+            com.lowagie.text.Paragraph title = new com.lowagie.text.Paragraph("Resultado Final", titleFont);
+            title.setAlignment(com.lowagie.text.Element.ALIGN_CENTER);
+            doc.add(title);
+            doc.add(com.lowagie.text.Chunk.NEWLINE);
+
+            String turnoLine = (turno != null && !turno.isBlank()) ? (turno) : "Todos os Turnos";
+
+            // If a specific campus was requested, keep the old behaviour (single section)
+            if (campusId != null) {
+                com.example.energif.model.Campus campus = campusRepository.findById(campusId).orElse(null);
+                java.util.List<com.example.energif.model.Candidato> candidatos;
+                if (turno != null && !turno.isBlank()) {
+                    candidatos = candidatoRepository.findAllByCampusIdAndTurnoOrderByDataInscricaoAscHoraInscricao(campusId, turno);
+                } else {
+                    candidatos = candidatoRepository.findAllByCampusIdOrderByDataInscricaoAscHoraInscricao(campusId);
+                }
+
+                // Campus header
+                String campusLine = "Campus: " + (campus != null ? campus.getNome() : "-");
+                com.lowagie.text.Paragraph info = new com.lowagie.text.Paragraph(campusLine + " - " + turnoLine, normalFont);
+                info.setAlignment(com.lowagie.text.Element.ALIGN_LEFT);
+                doc.add(info);
+                doc.add(com.lowagie.text.Chunk.NEWLINE);
+
+                java.time.format.DateTimeFormatter dateF = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                java.time.format.DateTimeFormatter timeF = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss");
+
+                if (turno != null && !turno.isBlank()) {
+                    // single turno: render one table
+                    com.lowagie.text.pdf.PdfPTable table = new com.lowagie.text.pdf.PdfPTable(new float[]{2f, 4f, 2f, 4f});
+                    table.setWidthPercentage(100);
+                    table.addCell(new com.lowagie.text.Phrase("Data e Hora da Inscrição", headerFont));
+                    table.addCell(new com.lowagie.text.Phrase("Nome Completo", headerFont));
+                    table.addCell(new com.lowagie.text.Phrase("Classificação", headerFont));
+                    table.addCell(new com.lowagie.text.Phrase("Situação", headerFont));
+
+                    int rank = 0;
+                    for (com.example.energif.model.Candidato c : candidatos) {
+                        String dateTime = "-";
+                        if (c.getDataInscricao() != null) {
+                            dateTime = c.getDataInscricao().format(dateF);
+                            if (c.getHoraInscricao() != null) dateTime += " " + c.getHoraInscricao().format(timeF);
+                        }
+                        table.addCell(new com.lowagie.text.Phrase(dateTime, normalFont));
+                        table.addCell(new com.lowagie.text.Phrase(c.getNome() != null ? c.getNome() : "-", normalFont));
+                        if (Boolean.TRUE.equals(c.getHabilitado())) {
+                            rank++;
+                            table.addCell(new com.lowagie.text.Phrase(rank + "°", normalFont));
+                            table.addCell(new com.lowagie.text.Phrase("Habilitado", normalFont));
+                        } else {
+                            table.addCell(new com.lowagie.text.Phrase("-", normalFont));
+                            String motivo = c.getMotivoNaoHabilitacao();
+                            String situ = "Eliminado" + (motivo != null && !motivo.isBlank() ? " - " + motivo : "");
+                            table.addCell(new com.lowagie.text.Phrase(situ, normalFont));
+                        }
+                    }
+                    doc.add(table);
+                } else {
+                    // multiple turnos: group by turno and render a table per turno
+                    java.util.Map<String, java.util.List<com.example.energif.model.Candidato>> byTurno =
+                            candidatos.stream().collect(java.util.stream.Collectors.groupingBy(c -> c.getTurno() != null ? c.getTurno() : "(sem turno)", java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
+
+                    for (java.util.Map.Entry<String, java.util.List<com.example.energif.model.Candidato>> te : byTurno.entrySet()) {
+                        String turnoName = te.getKey();
+                        com.lowagie.text.Paragraph turnoPara = new com.lowagie.text.Paragraph("Turno: " + turnoName, normalFont);
+                        turnoPara.setAlignment(com.lowagie.text.Element.ALIGN_LEFT);
+                        doc.add(turnoPara);
+                        doc.add(com.lowagie.text.Chunk.NEWLINE);
+
+                        com.lowagie.text.pdf.PdfPTable table = new com.lowagie.text.pdf.PdfPTable(new float[]{2f, 4f, 2f, 4f});
+                        table.setWidthPercentage(100);
+                        table.addCell(new com.lowagie.text.Phrase("Data e Hora da Inscrição", headerFont));
+                        table.addCell(new com.lowagie.text.Phrase("Nome Completo", headerFont));
+                        table.addCell(new com.lowagie.text.Phrase("Classificação", headerFont));
+                        table.addCell(new com.lowagie.text.Phrase("Situação", headerFont));
+
+                        int rank = 0;
+                        for (com.example.energif.model.Candidato c : te.getValue()) {
+                            String dateTime = "-";
+                            if (c.getDataInscricao() != null) {
+                                dateTime = c.getDataInscricao().format(dateF);
+                                if (c.getHoraInscricao() != null) dateTime += " " + c.getHoraInscricao().format(timeF);
+                            }
+                            table.addCell(new com.lowagie.text.Phrase(dateTime, normalFont));
+                            table.addCell(new com.lowagie.text.Phrase(c.getNome() != null ? c.getNome() : "-", normalFont));
+                            if (Boolean.TRUE.equals(c.getHabilitado())) {
+                                rank++;
+                                table.addCell(new com.lowagie.text.Phrase(rank + "°", normalFont));
+                                table.addCell(new com.lowagie.text.Phrase("Habilitado", normalFont));
+                            } else {
+                                table.addCell(new com.lowagie.text.Phrase("-", normalFont));
+                                String motivo = c.getMotivoNaoHabilitacao();
+                                String situ = "Eliminado" + (motivo != null && !motivo.isBlank() ? " - " + motivo : "");
+                                table.addCell(new com.lowagie.text.Phrase(situ, normalFont));
+                            }
+                        }
+                        doc.add(table);
+                        doc.add(com.lowagie.text.Chunk.NEWLINE);
+                    }
+                }
+
+            } else {
+                // No campus specified: group candidates by campus and produce one section per campus
+                java.util.List<com.example.energif.model.Candidato> all = candidatoRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "dataInscricao", "horaInscricao"));
+                if (turno != null && !turno.isBlank()) {
+                    all = all.stream().filter(c -> c.getTurno() != null && turno.equals(c.getTurno())).toList();
+                }
+
+                java.util.Map<com.example.energif.model.Campus, java.util.List<com.example.energif.model.Candidato>> grouped =
+                        all.stream().collect(java.util.stream.Collectors.groupingBy(com.example.energif.model.Candidato::getCampus, java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
+
+                java.time.format.DateTimeFormatter dateF = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                java.time.format.DateTimeFormatter timeF = java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss");
+
+                for (java.util.Map.Entry<com.example.energif.model.Campus, java.util.List<com.example.energif.model.Candidato>> e : grouped.entrySet()) {
+                    com.example.energif.model.Campus campusKey = e.getKey();
+                    java.util.List<com.example.energif.model.Candidato> list = e.getValue();
+
+                    String campusLine = "Campus: " + (campusKey != null ? campusKey.getNome() : "Sem Campus");
+                    com.lowagie.text.Paragraph info = new com.lowagie.text.Paragraph(campusLine + " - " + turnoLine, normalFont);
+                    info.setAlignment(com.lowagie.text.Element.ALIGN_LEFT);
+                    doc.add(info);
+                    doc.add(com.lowagie.text.Chunk.NEWLINE);
+
+                    if (list.isEmpty()) {
+                        com.lowagie.text.Paragraph none = new com.lowagie.text.Paragraph("Nenhum candidato para este campus.", normalFont);
+                        doc.add(none);
+                        doc.add(com.lowagie.text.Chunk.NEWLINE);
+                    } else {
+                        // If a specific turno was requested earlier, list contains only that turno.
+                        // Otherwise, group by turno inside this campus and produce one table per turno.
+                        java.util.Map<String, java.util.List<com.example.energif.model.Candidato>> byTurno =
+                                list.stream().collect(java.util.stream.Collectors.groupingBy(c -> c.getTurno() != null ? c.getTurno() : "(sem turno)", java.util.LinkedHashMap::new, java.util.stream.Collectors.toList()));
+
+                        for (java.util.Map.Entry<String, java.util.List<com.example.energif.model.Candidato>> te : byTurno.entrySet()) {
+                            String turnoName = te.getKey();
+                            com.lowagie.text.Paragraph turnoPara = new com.lowagie.text.Paragraph("Turno: " + turnoName, normalFont);
+                            turnoPara.setAlignment(com.lowagie.text.Element.ALIGN_LEFT);
+                            doc.add(turnoPara);
+                            doc.add(com.lowagie.text.Chunk.NEWLINE);
+
+                            com.lowagie.text.pdf.PdfPTable table = new com.lowagie.text.pdf.PdfPTable(new float[]{2f, 4f, 2f, 4f});
+                            table.setWidthPercentage(100);
+                            table.addCell(new com.lowagie.text.Phrase("Data e Hora da Inscrição", headerFont));
+                            table.addCell(new com.lowagie.text.Phrase("Nome Completo", headerFont));
+                            table.addCell(new com.lowagie.text.Phrase("Classificação", headerFont));
+                            table.addCell(new com.lowagie.text.Phrase("Situação", headerFont));
+
+                            int rank = 0;
+                            for (com.example.energif.model.Candidato c : te.getValue()) {
+                                String dateTime = "-";
+                                if (c.getDataInscricao() != null) {
+                                    dateTime = c.getDataInscricao().format(dateF);
+                                    if (c.getHoraInscricao() != null) dateTime += " " + c.getHoraInscricao().format(timeF);
+                                }
+                                table.addCell(new com.lowagie.text.Phrase(dateTime, normalFont));
+                                table.addCell(new com.lowagie.text.Phrase(c.getNome() != null ? c.getNome() : "-", normalFont));
+                                if (Boolean.TRUE.equals(c.getHabilitado())) {
+                                    rank++;
+                                    table.addCell(new com.lowagie.text.Phrase(rank + "°", normalFont));
+                                    table.addCell(new com.lowagie.text.Phrase("Habilitado", normalFont));
+                                } else {
+                                    table.addCell(new com.lowagie.text.Phrase("-", normalFont));
+                                    String motivo = c.getMotivoNaoHabilitacao();
+                                    String situ = "Eliminado" + (motivo != null && !motivo.isBlank() ? " - " + motivo : "");
+                                    table.addCell(new com.lowagie.text.Phrase(situ, normalFont));
+                                }
+                            }
+                            doc.add(table);
+                            doc.add(com.lowagie.text.Chunk.NEWLINE);
+                        }
+                    }
+
+                    // page break between campuses
+                    doc.newPage();
+                }
+            }
+            doc.close();
+
+        } catch (Exception e) {
+            logger.error("Erro ao gerar relatorio PDF", e);
+            try { response.sendError(500, "Erro ao gerar relatorio: " + e.getMessage()); } catch (java.io.IOException ex) {}
+        }
+    }
     private Campus resolveCampus(String campusId) {
     try {
         Long cid = Long.parseLong(campusId);

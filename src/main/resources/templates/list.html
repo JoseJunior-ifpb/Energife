@@ -12,14 +12,14 @@
             <h1>Lista de Candidatos</h1>
             <div class="subtitle">Visualize e gerencie os candidatos cadastrados</div>
         </div>
-                <div class="toolbar">
+        <div class="toolbar">
             <a th:href="@{/candidatos/novo}" class="btn btn-primary">Novo Candidato</a>
             <a th:href="@{/}" class="btn btn-ghost">Home</a>
             <a th:href="@{/motivos/list}" class="btn btn-ghost">Motivos</a>
             <div style="margin-left:12px;display:flex;align-items:center;gap:8px">
                 <label class="muted" style="font-size:0.9rem">Ordenar por:</label>
-                <a th:href="@{/candidatos/list(order='newest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, habilitado=${selectedHabilitado})}" th:classappend="${selectedOrder=='newest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais recentes</a>
-                <a th:href="@{/candidatos/list(order='oldest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, habilitado=${selectedHabilitado})}" th:classappend="${selectedOrder=='oldest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais antigos</a>
+                <a th:href="@{/candidatos/list(order='newest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, idade=${selectedIdade}, habilitado=${selectedHabilitado}, turno=${selectedTurno})}" th:classappend="${selectedOrder=='newest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais recentes</a>
+                <a th:href="@{/candidatos/list(order='oldest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, idade=${selectedIdade}, habilitado=${selectedHabilitado}, turno=${selectedTurno})}" th:classappend="${selectedOrder=='oldest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais antigos</a>
             </div>
             <form th:action="@{/candidatos/list}" method="get" style="margin-left:12px; display:inline-flex; align-items:center; gap:8px">
                 <input type="hidden" name="order" th:value="${selectedOrder}" />
@@ -41,6 +41,11 @@
                     <option value="">Todos</option>
                     <option th:each="cp : ${campuses}" th:value="${cp.id}" th:text="${cp.nome}" th:selected="${cp.id == selectedCampus}"></option>
                 </select>
+                <label class="muted">Turno:</label>
+                <select name="turno">
+                    <option value="">Todos</option>
+                    <option th:each="t : ${turnos}" th:value="${t}" th:text="${t}" th:selected="${t == selectedTurno}"></option>
+                </select>
                 <label class="muted">Habilitado:</label>
                 <select name="habilitado">
                     <option value="">Todos</option>
@@ -48,43 +53,44 @@
                     <option value="nao" th:selected="${selectedHabilitado == 'nao'}">Não habilitados</option>
                 </select>
                 <button type="submit" class="btn btn-ghost">Filtrar</button>
+                <button type="submit" class="btn btn-primary" formtarget="_blank" formaction="/candidatos/report">Gerar relatório</button>
             </form>
 
-            <!-- Search form -->
-        <form th:action="@{/candidatos/list}" method="get" class="search-form">
-    <input type="hidden" name="order" th:value="${selectedOrder}" />
-    <input type="hidden" name="genero" th:value="${selectedGenero}" />
-    <input type="hidden" name="idade" th:value="${selectedIdade}" />
-    <input type="hidden" name="habilitado" th:value="${selectedHabilitado}" />
-    <div class="search-input-container">
-        <input 
-            type="text" 
-            name="q" 
-            placeholder="Pesquisar por nome, campus ou CPF..." 
-            th:value="${q}"
-            class="search-input"
-        />
-        <button type="submit" class="search-button">
-            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <path d="m21 21-4.3-4.3"></path>
-            </svg>
-            <span class="search-text">Pesquisar</span>
-        </button>
-    </div>
-</form>
+            <form th:action="@{/candidatos/list}" method="get" class="search-form" style="display:flex; align-items:center; gap:8px;">
+                <input type="hidden" name="order" th:value="${selectedOrder}" />
+                <input type="hidden" name="genero" th:value="${selectedGenero}" />
+                <input type="hidden" name="idade" th:value="${selectedIdade}" />
+                <input type="hidden" name="habilitado" th:value="${selectedHabilitado}" />
+                
+                <div class="search-input-container"> 
+                    <input 
+                        type="text" 
+                        name="q" 
+                        placeholder="Pesquisar por nome, campus ou CPF..." 
+                        th:value="${q}"
+                        class="search-input"
+                    /> 
+                </div> 
+                
+                <button type="submit" class="search-button">
+                    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                    <span class="search-text">Pesquisar</span>
+                </button>
+            </form>
 
-            <!-- XLSX import form -->
             <form th:action="@{/candidatos/import}" method="post" enctype="multipart/form-data" style="margin-left:12px;display:flex;align-items:center;gap:8px">
                 <input type="text" name="editalDescricao" placeholder="Digite o número/descrição do edital (ex: 'edital n°25 2025.1')" required />
                 <input type="file" name="file" accept=".xlsx" required />
                 <button type="submit" class="btn btn-info">Importar XLSX</button>
             </form>
 
-            <!-- Delete all candidates -->
             <form th:action="@{/candidatos/delete-all}" method="post" style="margin-left:12px;display:flex;align-items:center;">
                 <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja apagar todos os candidatos?');">Apagar todos</button>
             </form>
+            <button id="btn-duplicados" class="btn btn-ghost" style="margin-left:12px">Candidatos repetidos</button>
         </div>
     </div>
 
@@ -93,7 +99,6 @@
             <table class="styled">
                 <thead>
                 <tr>
-                    <!--<th>ID</th>-->
                     <th>Nome</th>
                     <th>CPF</th>
                     <th>Campus</th>
@@ -108,7 +113,6 @@
                 </thead>
                 <tbody>
                 <tr th:each="cand : ${candidatos}">
-                    <!---<td><span class="badge" th:text="${cand.id}">1</span></td>*/ -->
                     <td th:text="${cand.nome}">Nome</td>
                     <td th:text="${cand.cpf}">000</td>
                     <td th:text="${cand.campus != null ? cand.campus.nome : '-'}" class="muted">Campus</td>
@@ -120,25 +124,26 @@
                     <td>
                         <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post" class="situacao-form">
                             <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'nao') ? 'table-cell' : 'none';">
-                                    <option th:value="'sim'" th:selected="${cand.habilitado == true}">Habilitado</option>
-                                    <option th:value="'nao'" th:selected="${cand.habilitado != true}">Não habilitado</option>
+                            <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'nao') ? 'table-cell' : 'none';">
+                                <option th:value="'sim'" th:selected="${cand.habilitado == true}">Habilitado</option>
+                                <option th:value="'nao'" th:selected="${cand.habilitado != true}">Não habilitado</option>
+                                <option value="" th:selected="${cand.motivoNaoHabilitacao == null || cand.motivoNaoHabilitacao == ''}">Selecione</option>
                             </select>
                             <input type="hidden" name="habilitado" th:value="${cand.habilitado}" />
-                <button type="submit" class="btn btn-sm">Salvar</button>
+                            <button type="submit" class="btn btn-sm">Salvar</button>
                         </form>
                     </td>
                     <td class="motivo-input" th:style="${cand.habilitado == true} ? 'display:none' : 'display:table-cell'">
                         <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post">
-                        <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                        <input type="hidden" name="situacao" value="nao" />
-                        <select name="motivo">
-                        <option value="" th:selected="${cand.motivoNaoHabilitacao == null || cand.motivoNaoHabilitacao == ''}">Selecione um motivo</option>
-                        <option th:each="m : ${motivos}" th:value="${m.descricao}"
-                            th:text="${m.descricao}"
-                            th:selected="${m.descricao == cand.motivoNaoHabilitacao}"></option>
-                        </select>
-                        <button type="submit" class="btn btn-sm">Salvar</button>
+                            <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <input type="hidden" name="situacao" value="nao" />
+                            <select name="motivo">
+                                <option value="" th:selected="${cand.motivoNaoHabilitacao == null || cand.motivoNaoHabilitacao == ''}">Selecione um motivo</option>
+                                <option th:each="m : ${motivos}" th:value="${m.descricao}"
+                                    th:text="${m.descricao}"
+                                    th:selected="${m.descricao == cand.motivoNaoHabilitacao}"></option>
+                            </select>
+                            <button type="submit" class="btn btn-sm">Salvar</button>
                         </form>
                     </td>
                 </tr>
@@ -148,188 +153,274 @@
                 </tbody>
             </table>
         </div>
-        <div class="pagination" style="padding:12px;display:flex;align-items:center;gap:8px;justify-content:center"
+        <div class="pagination" style="padding:12px;display:flex;align-items:center;gap:8px;justify-content-center"
              th:with="total=${candidatosPage.totalPages},
                       start=${currentPage - 2 >= 0 ? currentPage - 2 : 0},
                       end=${currentPage + 2 <= total - 1 ? currentPage + 2 : total - 1}">
 
-            <!-- Previous -->
             <div>
-                <a th:if="${currentPage > 0}" th:href="@{/candidatos/list(page=${currentPage-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}" class="btn">&laquo; Anterior</a>
+                <a th:if="${currentPage > 0}" th:href="@{/candidatos/list(page=${currentPage-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}" class="btn">&laquo; Anterior</a>
                 <span th:if="${currentPage == 0}" class="btn disabled">&laquo; Anterior</span>
             </div>
 
-            <!-- First + left ellipsis -->
             <div style="display:flex;gap:6px;align-items:center;">
-                <a th:if="${start > 0}" th:href="@{/candidatos/list(page=0,size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}" class="btn btn-ghost">1</a>
+                <a th:if="${start > 0}" th:href="@{/candidatos/list(page=0,size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}" class="btn btn-ghost">1</a>
                 <span th:if="${start > 1}" class="muted">&hellip;</span>
 
-                <!-- Page window -->
                 <span th:each="i : ${#numbers.sequence(start, end)}">
-                                  <a th:href="@{/candidatos/list(page=${i},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}"
+                    <a th:href="@{/candidatos/list(page=${i},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}"
                        th:classappend="${i == currentPage} ? ' btn-primary' : ' btn-ghost'"
                        th:text="${i+1}">1</a>
                 </span>
 
-                <!-- Right ellipsis + Last -->
                 <span th:if="${end < total - 2}" class="muted">&hellip;</span>
-                <a th:if="${end < total - 1}" th:href="@{/candidatos/list(page=${total-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}" class="btn btn-ghost" th:text="${total}">N</a>
+                <a th:if="${end < total - 1}" th:href="@{/candidatos/list(page=${total-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}" class="btn btn-ghost" th:text="${total}">N</a>
             </div>
 
-            <!-- Next -->
             <div>
-                <a th:if="${currentPage < (total - 1)}" th:href="@{/candidatos/list(page=${currentPage+1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},habilitado=${selectedHabilitado})}" class="btn">Próximo &raquo;</a>
+                <a th:if="${currentPage < (total - 1)}" th:href="@{/candidatos/list(page=${currentPage+1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}" class="btn">Próximo &raquo;</a>
                 <span th:if="${currentPage >= (total - 1)}" class="btn disabled">Próximo &raquo;</span>
             </div>
-
         </div>
     </div>
 </div>
 </body>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Intercept motivo forms and submit via AJAX to avoid full page reload
-        document.querySelectorAll('.motivo-input form').forEach(function(form) {
-            form.addEventListener('submit', async function(ev) {
-                ev.preventDefault();
-                const tr = form.closest('tr');
-                // Show a saving indicator
-                let indicator = form.querySelector('.save-indicator');
-                if (!indicator) {
-                    indicator = document.createElement('span');
-                    indicator.className = 'save-indicator muted';
-                    indicator.style.marginLeft = '8px';
-                    form.appendChild(indicator);
-                }
-                indicator.textContent = 'Salvando...';
+<!-- Modal para listar candidatos repetidos -->
+<div id="modal-duplicados" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);align-items:center;justify-content:center;z-index:9999;">
+    <div style="background:#fff;max-width:800px;width:95%;max-height:80vh;overflow:auto;border-radius:6px;padding:16px;box-shadow:0 6px 24px rgba(0,0,0,0.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="margin:0">Candidatos repetidos</h3>
+            <button id="close-duplicados" class="btn btn-ghost">Fechar</button>
+        </div>
+        <div id="duplicados-content">
+            <table style="width:100%;border-collapse:collapse">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd">CPF</th>
+                        <th style="text-align:right;padding:8px;border-bottom:1px solid #ddd">Total de repetições</th>
+                        <th style="text-align:center;padding:8px;border-bottom:1px solid #ddd">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="duplicados-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Intercept motivo forms and submit via AJAX to avoid full page reload
+    document.querySelectorAll('.motivo-input form').forEach(function(form) {
+        form.addEventListener('submit', async function(ev) {
+            ev.preventDefault();
+            const tr = form.closest('tr');
+            // Show a saving indicator
+            let indicator = form.querySelector('.save-indicator');
+            if (!indicator) {
+                indicator = document.createElement('span');
+                indicator.className = 'save-indicator muted';
+                indicator.style.marginLeft = '8px';
+                form.appendChild(indicator);
+            }
+            indicator.textContent = 'Salvando...';
 
-                try {
-                    const fd = new FormData(form);
-                    const saveButton = form.querySelector('button[type=submit]');
-                    if (saveButton) saveButton.disabled = true;
-                    const res = await fetch(form.action, {
-                        method: 'POST',
-                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                        body: fd,
-                        credentials: 'same-origin'
-                    });
-                    if (saveButton) saveButton.disabled = false;
-                    if (!res.ok) {
-                        indicator.textContent = 'Erro';
-                        setTimeout(() => indicator.textContent = '', 2000);
-                        alert('Erro ao salvar motivo (status ' + res.status + ')');
-                        return;
-                    }
-
-                    indicator.textContent = 'Salvo';
-                    tr.style.transition = 'background-color 0.4s';
-                    tr.style.backgroundColor = '#e6ffe6';
-                    setTimeout(function() { tr.style.backgroundColor = ''; }, 700);
-                    setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1200);
-                } catch (err) {
-                    indicator.textContent = 'Erro rede';
+            try {
+                const fd = new FormData(form);
+                const saveButton = form.querySelector('button[type=submit]');
+                if (saveButton) saveButton.disabled = true;
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd,
+                    credentials: 'same-origin'
+                });
+                if (saveButton) saveButton.disabled = false;
+                if (!res.ok) {
+                    indicator.textContent = 'Erro';
                     setTimeout(() => indicator.textContent = '', 2000);
-                    console.error(err);
-                    alert('Erro de rede ao salvar motivo');
+                    alert('Erro ao salvar motivo (status ' + res.status + ')');
+                    return;
                 }
-            });
-        });
-        // Intercept situacao forms and submit via AJAX as well
-        document.querySelectorAll('.situacao-form').forEach(function(form) {
-            form.addEventListener('submit', async function(ev) {
-                ev.preventDefault();
-                const tr = form.closest('tr');
-                let indicator = form.querySelector('.save-indicator');
-                if (!indicator) {
-                    indicator = document.createElement('span');
-                    indicator.className = 'save-indicator muted';
-                    indicator.style.marginLeft = '8px';
-                    form.appendChild(indicator);
-                }
-                indicator.textContent = 'Salvando...';
 
-                // remove any previous feedback message in this row
-                let prevFeedback = tr.querySelector('.feedback-message');
-                if (prevFeedback) prevFeedback.remove();
-
-                try {
-                    const fd = new FormData(form);
-                    const res = await fetch(form.action, {
-                        method: 'POST',
-                        body: fd,
-                        credentials: 'same-origin'
-                    });
-                    if (!res.ok) {
-                        indicator.textContent = 'Erro';
-                        setTimeout(() => indicator.textContent = '', 2000);
-                        alert('Erro ao salvar situação (status ' + res.status + ')');
-                        return;
-                    }
-
-                    // parse JSON response from server
-                    let json = null;
-                    try {
-                        json = await res.json();
-                    } catch (e) {
-                        // not JSON — fall back to success
-                        json = { sucesso: true };
-                    }
-
-                    // If server indicates failure, show message
-                    if (json && json.sucesso === false) {
-                        indicator.textContent = 'Erro';
-                        setTimeout(() => indicator.textContent = '', 2000);
-                        const errMsg = json.mensagem || json.error || 'Erro ao atualizar situação';
-                        alert(errMsg);
-                        return;
-                    }
-
-                    // If the selected situacao is 'nao', show motivo cell; otherwise hide it
-                    const situacaoVal = (new FormData(form)).get('situacao');
-                    const motivoCell = tr.querySelector('.motivo-input');
-                    if (motivoCell) {
-                        motivoCell.style.display = (situacaoVal === 'nao') ? 'table-cell' : 'none';
-                    }
-
-                    indicator.textContent = 'Salvo';
-
-                    // show transient feedback about remaining vacancies when present
-                    if (json && (json.vagasDisponiveis !== undefined || json.mensagem)) {
-                        const feedback = document.createElement('div');
-                        feedback.className = 'feedback-message muted';
-                        feedback.style.marginTop = '6px';
-                        feedback.style.fontSize = '0.9rem';
-                        if (json.vagasDisponiveis !== undefined && json.campusNome) {
-                            const tipo = json.tipoVaga ? (' (' + json.tipoVaga + ')') : '';
-                            feedback.textContent = `Vagas restantes em ${json.campusNome}${tipo}: ${json.vagasDisponiveis}`;
-                        } else if (json.mensagem) {
-                            feedback.textContent = json.mensagem;
-                        } else {
-                            feedback.textContent = 'Atualizado';
-                        }
-                        // append feedback to the cell that contains the situacao form (it's visible)
-                        const formCell = form.closest('td') || tr.querySelector('td:last-child') || tr;
-                        formCell.appendChild(feedback);
-                        // fade out after a few seconds
-                        setTimeout(() => {
-                            feedback.style.transition = 'opacity 0.6s';
-                            feedback.style.opacity = '0';
-                            setTimeout(() => feedback.remove(), 700);
-                        }, 3500);
-                    }
-
-                    tr.style.transition = 'background-color 0.4s';
-                    tr.style.backgroundColor = '#e6ffe6';
-                    setTimeout(function() { tr.style.backgroundColor = ''; }, 700);
-                    setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1200);
-                } catch (err) {
-                    indicator.textContent = 'Erro rede';
-                    setTimeout(() => indicator.textContent = '', 2000);
-                    console.error(err);
-                    alert('Erro de rede ao salvar situação');
-                }
-            });
+                indicator.textContent = 'Salvo';
+                tr.style.transition = 'background-color 0.4s';
+                tr.style.backgroundColor = '#e6ffe6';
+                setTimeout(function() { tr.style.backgroundColor = ''; }, 700);
+                setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1200);
+            } catch (err) {
+                indicator.textContent = 'Erro rede';
+                setTimeout(() => indicator.textContent = '', 2000);
+                console.error(err);
+                alert('Erro de rede ao salvar motivo');
+            }
         });
     });
-    </script>
+    // Intercept situacao forms and submit via AJAX as well
+    document.querySelectorAll('.situacao-form').forEach(function(form) {
+        form.addEventListener('submit', async function(ev) {
+            ev.preventDefault();
+            const tr = form.closest('tr');
+            let indicator = form.querySelector('.save-indicator');
+            if (!indicator) {
+                indicator = document.createElement('span');
+                indicator.className = 'save-indicator muted';
+                indicator.style.marginLeft = '8px';
+                form.appendChild(indicator);
+            }
+            indicator.textContent = 'Salvando...';
+
+            // remove any previous feedback message in this row
+            let prevFeedback = tr.querySelector('.feedback-message');
+            if (prevFeedback) prevFeedback.remove();
+
+            try {
+                const fd = new FormData(form);
+                const res = await fetch(form.action, {
+                    method: 'POST',
+                    body: fd,
+                    credentials: 'same-origin'
+                });
+                if (!res.ok) {
+                    indicator.textContent = 'Erro';
+                    setTimeout(() => indicator.textContent = '', 2000);
+                    alert('Erro ao salvar situação (status ' + res.status + ')');
+                    return;
+                }
+
+                // parse JSON response from server
+                let json = null;
+                try {
+                    json = await res.json();
+                } catch (e) {
+                    // not JSON — fall back to success
+                    json = { sucesso: true };
+                }
+
+                // If server indicates failure, show message
+                if (json && json.sucesso === false) {
+                    indicator.textContent = 'Erro';
+                    setTimeout(() => indicator.textContent = '', 2000);
+                    const errMsg = json.mensagem || json.error || 'Erro ao atualizar situação';
+                    alert(errMsg);
+                    return;
+                }
+
+                // If the selected situacao is 'nao', show motivo cell; otherwise hide it
+                const situacaoVal = (new FormData(form)).get('situacao');
+                const motivoCell = tr.querySelector('.motivo-input');
+                if (motivoCell) {
+                    motivoCell.style.display = (situacaoVal === 'nao') ? 'table-cell' : 'none';
+                }
+
+                indicator.textContent = 'Salvo';
+
+                // show transient feedback about remaining vacancies when present
+                if (json && (json.vagasDisponiveis !== undefined || json.mensagem)) {
+                    const feedback = document.createElement('div');
+                    feedback.className = 'feedback-message muted';
+                    feedback.style.marginTop = '6px';
+                    feedback.style.fontSize = '0.9rem';
+                    if (json.vagasDisponiveis !== undefined && json.campusNome) {
+                        const tipo = json.tipoVaga ? (' (' + json.tipoVaga + ')') : '';
+                        feedback.textContent = `Vagas restantes em ${json.campusNome}${tipo}: ${json.vagasDisponiveis}`;
+                    } else if (json.mensagem) {
+                        feedback.textContent = json.mensagem;
+                    } else {
+                        feedback.textContent = 'Atualizado';
+                    }
+                    // append feedback to the cell that contains the situacao form (it's visible)
+                    const formCell = form.closest('td') || tr.querySelector('td:last-child') || tr;
+                    formCell.appendChild(feedback);
+                    // fade out after a few seconds
+                    setTimeout(() => {
+                        feedback.style.transition = 'opacity 0.6s';
+                        feedback.style.opacity = '0';
+                        setTimeout(() => feedback.remove(), 700);
+                    }, 3500);
+                }
+
+                tr.style.transition = 'background-color 0.4s';
+                tr.style.backgroundColor = '#e6ffe6';
+                setTimeout(function() { tr.style.backgroundColor = ''; }, 700);
+                setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1200);
+            } catch (err) {
+                indicator.textContent = 'Erro rede';
+                setTimeout(() => indicator.textContent = '', 2000);
+                console.error(err);
+                alert('Erro de rede ao salvar situação');
+            }
+        });
+    });
+
+    // Handle "Candidatos repetidos" button: fetch duplicates and show modal
+    const btnDup = document.getElementById('btn-duplicados');
+    const modalDup = document.getElementById('modal-duplicados');
+    const closeDup = document.getElementById('close-duplicados');
+    const tbodyDup = document.getElementById('duplicados-tbody');
+    if (btnDup && modalDup && closeDup && tbodyDup) {
+        btnDup.addEventListener('click', async function() {
+            try {
+                btnDup.disabled = true;
+                btnDup.textContent = 'Carregando...';
+                const res = await fetch('/candidatos/repetidos', { credentials: 'same-origin' });
+                btnDup.disabled = false;
+                btnDup.textContent = 'Candidatos repetidos';
+                if (!res.ok) {
+                    alert('Erro ao buscar candidatos repetidos (status ' + res.status + ')');
+                    return;
+                }
+                const data = await res.json();
+                // clear tbody
+                tbodyDup.innerHTML = '';
+                if (!data || data.length === 0) {
+                    tbodyDup.innerHTML = '<tr><td colspan="2" style="padding:8px">Nenhum CPF duplicado encontrado.</td></tr>';
+                } else {
+                    data.forEach(function(row) {
+                        const tr = document.createElement('tr');
+                        const tdCpf = document.createElement('td');
+                        tdCpf.style.padding = '8px';
+                        tdCpf.textContent = row.cpf || '-';
+                        const tdCount = document.createElement('td');
+                        tdCount.style.padding = '8px';
+                        tdCount.style.textAlign = 'right';
+                        tdCount.textContent = row.total != null ? row.total : '-';
+
+                        const tdAction = document.createElement('td');
+                        tdAction.style.padding = '8px';
+                        tdAction.style.textAlign = 'center';
+                        const btn = document.createElement('button');
+                        btn.className = 'btn btn-ghost';
+                        btn.title = 'Buscar por este CPF';
+                        // simple magnifier SVG
+                        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>';
+                        btn.addEventListener('click', function() {
+                            // close modal and navigate to lista with q=cpf
+                            modalDup.style.display = 'none';
+                            const cpf = row.cpf || '';
+                            // navigate to list page with query
+                            const url = '/candidatos/list?q=' + encodeURIComponent(cpf);
+                            window.location.href = url;
+                        });
+                        tdAction.appendChild(btn);
+
+                        tr.appendChild(tdCpf);
+                        tr.appendChild(tdCount);
+                        tr.appendChild(tdAction);
+                        tbodyDup.appendChild(tr);
+                    });
+                }
+                modalDup.style.display = 'flex';
+            } catch (err) {
+                btnDup.disabled = false;
+                btnDup.textContent = 'Candidatos repetidos';
+                console.error(err);
+                alert('Erro ao buscar candidatos repetidos');
+            }
+        });
+
+        closeDup.addEventListener('click', function() { modalDup.style.display = 'none'; });
+        modalDup.addEventListener('click', function(ev) { if (ev.target === modalDup) modalDup.style.display = 'none'; });
+    }
+});
+</script>
 </html>

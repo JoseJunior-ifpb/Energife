@@ -501,6 +501,7 @@ body {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     border: 2px solid transparent;
     transition: all 0.3s ease;
+    width: 100%;
 }
 
 .search-input-container:focus-within {
@@ -510,7 +511,7 @@ body {
 
 .search-input {
     flex: 1;
-    padding: 10px 16px;
+    padding: 10px 6px;
     border: none;
     outline: none;
     font-size: 0.9rem;
@@ -528,7 +529,8 @@ body {
     padding: 10px 16px;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
-    border: none;
+    border-radius: 0 10px 10px 0;
+    
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 0.9rem;

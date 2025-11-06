@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.List;
 
 public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
 
@@ -29,22 +30,37 @@ public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
 
     // Combined search supporting q, campusId, genero and age group (maior/minor de 18 anos)
 	@Query(value = "SELECT c.* FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
-	"WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
-	"AND (:campusId IS NULL OR cp.id = :campusId) " +
-	"AND (:genero IS NULL OR c.genero = :genero) " +
-	"AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
-	"AND (:habilitado IS NULL OR c.habilitado = :habilitado)",
-	countQuery = "SELECT count(c.id) FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
-		"WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
-		"AND (:campusId IS NULL OR cp.id = :campusId) " +
-		"AND (:genero IS NULL OR c.genero = :genero) " +
-		"AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
-		"AND (:habilitado IS NULL OR c.habilitado = :habilitado)",
-	nativeQuery = true)
+    "WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
+    "AND (:campusId IS NULL OR cp.id = :campusId) " +
+    "AND (:genero IS NULL OR c.genero = :genero) " +
+    "AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
+    "AND (:habilitado IS NULL OR c.habilitado = :habilitado) " +
+    "AND (:turno IS NULL OR lower(c.turno) = lower(:turno))", // <-- CLÁUSULA CORRIGIDA
+    
+    countQuery = "SELECT count(c.id) FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
+        "WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
+        "AND (:campusId IS NULL OR cp.id = :campusId) " +
+        "AND (:genero IS NULL OR c.genero = :genero) " +
+        "AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
+        "AND (:habilitado IS NULL OR c.habilitado = :habilitado) " +
+        "AND (:turno IS NULL OR lower(c.turno) = lower(:turno))", // <-- CLÁUSULA CORRIGIDA
+    nativeQuery = true)
 	Page<Candidato> searchCombined(@Param("q") String q,
 				   @Param("campusId") Long campusId,
 				   @Param("genero") Character genero,
 				   @Param("idade") String idade,
-				   @Param("habilitado") Boolean habilitado,
-				   Pageable pageable);
+				   @Param("habilitado") Boolean habilitado,@Param("turno") String turno,
+                       Pageable pageable);
+
+	    // For report generation: fetch ordered list of candidates by inscription date/time
+	    List<Candidato> findAllByCampusIdOrderByDataInscricaoAscHoraInscricao(Long campusId);
+
+	    List<Candidato> findAllByCampusIdAndTurnoOrderByDataInscricaoAscHoraInscricao(Long campusId, String turno);
+
+	    @Query("select distinct c.turno from Candidato c")
+	    List<String> findDistinctTurno();
+
+		// Find CPFs that appear more than once and their counts
+		@Query(value = "SELECT cpf, COUNT(cpf) AS total_de_repeticoes FROM candidato GROUP BY cpf HAVING COUNT(cpf) > 1", nativeQuery = true)
+		List<Object[]> findDuplicateCpfs();
 }
