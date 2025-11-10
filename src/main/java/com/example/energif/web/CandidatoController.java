@@ -35,13 +35,15 @@ public class CandidatoController {
 
     private final CandidatoRepository candidatoRepository;
     private final CampusRepository campusRepository;
+    private final com.example.energif.repository.CampusEditalRepository campusEditalRepository;
     private final Filtro filtro;
     private final com.example.energif.service.CandidatoService candidatoService;
     private final com.example.energif.repository.MotivoRepository motivoRepository;
 
-    public CandidatoController(CandidatoRepository candidatoRepository, CampusRepository campusRepository, Filtro filtro, com.example.energif.service.CandidatoService candidatoService, com.example.energif.repository.MotivoRepository motivoRepository) {
+    public CandidatoController(CandidatoRepository candidatoRepository, CampusRepository campusRepository, com.example.energif.repository.CampusEditalRepository campusEditalRepository, Filtro filtro, com.example.energif.service.CandidatoService candidatoService, com.example.energif.repository.MotivoRepository motivoRepository) {
         this.candidatoRepository = candidatoRepository;
         this.campusRepository = campusRepository;
+        this.campusEditalRepository = campusEditalRepository;
         this.filtro = filtro;
         this.candidatoService = candidatoService;
         this.motivoRepository = motivoRepository;
@@ -231,7 +233,20 @@ public String criar(@ModelAttribute Candidato candidato,
 
     @PostMapping("/delete-all")
     public String deleteAll() {
+        logger.info("Exclusão em massa iniciada: candidatos, campus_edital, campus");
+        try {
+            // Remove campus-edital links first to avoid FK constraint
+            campusEditalRepository.deleteAll();
+        } catch (Exception ex) {
+            logger.warn("Falha ao apagar campus_edital antes de apagar campus: {}", ex.getMessage());
+        }
+        // delete candidates and campuses
         candidatoRepository.deleteAll();
+        try {
+            campusRepository.deleteAll();
+        } catch (Exception ex) {
+            logger.error("Erro ao apagar campi: {}", ex.getMessage());
+        }
         return "redirect:/candidatos/list?deleted=all";
     }
 

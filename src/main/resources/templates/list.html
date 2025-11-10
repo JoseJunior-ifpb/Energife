@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>Lista de Candidatos</title>
     <link rel="stylesheet" href="/css/styles.css" />
+    
 </head>
 <body>
 <div class="container-app">
@@ -126,8 +127,8 @@
                             <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                             <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'nao') ? 'table-cell' : 'none';">
                                 <option th:value="'sim'" th:selected="${cand.habilitado == true}">Habilitado</option>
-                                <option th:value="'nao'" th:selected="${cand.habilitado != true}">Não habilitado</option>
-                                <option value="" th:selected="${cand.motivoNaoHabilitacao == null || cand.motivoNaoHabilitacao == ''}">Selecione</option>
+                                <option th:value="'nao'" th:selected="${cand.habilitado == false}">Não habilitado</option>
+                                <option value="" th:selected="${cand.habilitado == null || cand.habilitado == ''}">Selecione</option>
                             </select>
                             <input type="hidden" name="habilitado" th:value="${cand.habilitado}" />
                             <button type="submit" class="btn btn-sm">Salvar</button>
@@ -316,27 +317,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // show transient feedback about remaining vacancies when present
                 if (json && (json.vagasDisponiveis !== undefined || json.mensagem)) {
-                    const feedback = document.createElement('div');
-                    feedback.className = 'feedback-message muted';
-                    feedback.style.marginTop = '6px';
-                    feedback.style.fontSize = '0.9rem';
+                    const alert = document.createElement('div');
+                    alert.className = json.sucesso ? 'alert alert-success' : 'alert alert-warning';
+                    // Create alert content
+                    const content = document.createElement('div');
+                    content.className = 'alert-content';
+                    
+                    // Add title if available
+                    const title = document.createElement('div');
+                    title.className = 'alert-title';
+                    title.textContent = json.sucesso ? 'Sucesso' : 'Atenção';
+                    content.appendChild(title);
+                    
+                    // Add message
+                    const message = document.createElement('div');
+                    message.className = 'alert-message';
                     if (json.vagasDisponiveis !== undefined && json.campusNome) {
                         const tipo = json.tipoVaga ? (' (' + json.tipoVaga + ')') : '';
-                        feedback.textContent = `Vagas restantes em ${json.campusNome}${tipo}: ${json.vagasDisponiveis}`;
+                        message.textContent = `Vagas restantes em ${json.campusNome}${tipo}: ${json.vagasDisponiveis}`;
                     } else if (json.mensagem) {
-                        feedback.textContent = json.mensagem;
+                        message.textContent = json.mensagem;
                     } else {
-                        feedback.textContent = 'Atualizado';
+                        message.textContent = 'Atualizado com sucesso';
                     }
-                    // append feedback to the cell that contains the situacao form (it's visible)
+                    content.appendChild(message);
+                    
+                    // Create alert icon (success check or warning triangle)
+                    const icon = document.createElement('div');
+                    icon.className = 'alert-icon';
+                    icon.innerHTML = json.sucesso ? 
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M8 12l2 2 4-4"></path></svg>' :
+                        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+                    
+                    // Add close button
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'alert-close';
+                    closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+                    closeBtn.onclick = () => alert.remove();
+                    
+                    // Assemble alert
+                    alert.appendChild(icon);
+                    alert.appendChild(content);
+                    alert.appendChild(closeBtn);
+                    
+                    // append alert to the cell that contains the situacao form (it's visible)
                     const formCell = form.closest('td') || tr.querySelector('td:last-child') || tr;
-                    formCell.appendChild(feedback);
+                    formCell.appendChild(alert);
                     // fade out after a few seconds
                     setTimeout(() => {
-                        feedback.style.transition = 'opacity 0.6s';
-                        feedback.style.opacity = '0';
-                        setTimeout(() => feedback.remove(), 700);
-                    }, 3500);
+                        alert.style.transition = 'opacity 0.6s, transform 0.6s';
+                        alert.style.opacity = '0';
+                        alert.style.transform = 'translateY(-10px)';
+                        setTimeout(() => alert.remove(), 700);
+                    }, 5000);
                 }
 
                 tr.style.transition = 'background-color 0.4s';

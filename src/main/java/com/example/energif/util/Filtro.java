@@ -257,9 +257,9 @@ public class Filtro {
         if (campus == null) {
             campus = new Campus();
             campus.setNome(campusName);
-            // Define valores padrão para vagas
-            campus.setNumeroVagasReservadas(10); // valor padrão para mulheres
-            campus.setNumeroVagasAmplaConcorrencia(10); // valor padrão para homens
+            // Define valores padrão para vagas: zero para forçar configuração manual
+            campus.setNumeroVagasReservadas(0);
+            campus.setNumeroVagasAmplaConcorrencia(0);
             campus.setVagasReservadasOcupadas(0);
             campus.setVagasAmplaOcupadas(0);
             campus = campusRepository.save(campus);

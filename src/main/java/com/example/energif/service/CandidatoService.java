@@ -186,9 +186,13 @@ public Map<String, Object> habilitarCandidatoComFeedback(Long candidatoId, Strin
         if (!vagaDisponivel) {
             logger.error("NÃO há vagas disponíveis para o candidato {} no campus {}", candidatoId, campus.getNome());
             resultado.put("sucesso", false);
-            resultado.put("mensagem", "Não há vagas " + 
-                (candidato.getTipoVaga() == TipoVaga.RESERVADA ? "reservadas" : "de ampla concorrência") + 
-                " disponíveis no campus " + campus.getNome());
+            String tipo = (candidato.getTipoVaga() == TipoVaga.RESERVADA) ? "reservadas" : "de ampla concorrência";
+            String mensagem = "Não há vagas " + tipo + " disponíveis no campus " + campus.getNome() + ".";
+            // If total is zero, hint that admin must configure vacancies
+            if (vagasTotais == 0) {
+                mensagem += " Por favor, configure o número de vagas disponíveis no cadastro do campus antes de habilitar candidatos.";
+            }
+            resultado.put("mensagem", mensagem);
             resultado.put("vagasDisponiveis", vagasDisponiveis);
             resultado.put("vagasOcupadas", vagasOcupadas);
             resultado.put("vagasTotais", vagasTotais);
