@@ -34,22 +34,22 @@ public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
     "AND (:campusId IS NULL OR cp.id = :campusId) " +
     "AND (:genero IS NULL OR c.genero = :genero) " +
     "AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
-    "AND (:habilitado IS NULL OR c.habilitado = :habilitado) " +
-    "AND (:turno IS NULL OR lower(c.turno) = lower(:turno))", // <-- CLÁUSULA CORRIGIDA
+    "AND (:situacao IS NULL OR c.situacao = :situacao) " +
+    "AND (:turno IS NULL OR lower(c.turno) = lower(:turno))", // <-- CLÁUSULA ATUALIZADA PARA USAR SITUACAO
     
     countQuery = "SELECT count(c.id) FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
         "WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
         "AND (:campusId IS NULL OR cp.id = :campusId) " +
         "AND (:genero IS NULL OR c.genero = :genero) " +
         "AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
-        "AND (:habilitado IS NULL OR c.habilitado = :habilitado) " +
-        "AND (:turno IS NULL OR lower(c.turno) = lower(:turno))", // <-- CLÁUSULA CORRIGIDA
+        "AND (:situacao IS NULL OR c.situacao = :situacao) " +
+        "AND (:turno IS NULL OR lower(c.turno) = lower(:turno))", // <-- CLÁUSULA ATUALIZADA PARA USAR SITUACAO
     nativeQuery = true)
 	Page<Candidato> searchCombined(@Param("q") String q,
 				   @Param("campusId") Long campusId,
 				   @Param("genero") Character genero,
 				   @Param("idade") String idade,
-				   @Param("habilitado") Boolean habilitado,@Param("turno") String turno,
+				   @Param("situacao") String situacao,@Param("turno") String turno,
                        Pageable pageable);
 
 	    // For report generation: fetch ordered list of candidates by inscription date/time

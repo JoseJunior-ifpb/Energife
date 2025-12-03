@@ -2,6 +2,7 @@ package com.example.energif.web;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.example.energif.model.Campus;
+import com.example.energif.model.CampusEditalTurno;
 import com.example.energif.repository.CampusRepository;
+import com.example.energif.repository.CampusEditalTurnoRepository;
 
 @Controller
 @RequestMapping("/campus")
@@ -28,10 +31,14 @@ public class CampusController {
 
     private final CampusRepository campusRepository;
     private final com.example.energif.repository.CampusEditalRepository campusEditalRepository;
+    private final CampusEditalTurnoRepository campusEditalTurnoRepository;
 
-    public CampusController(CampusRepository campusRepository, com.example.energif.repository.CampusEditalRepository campusEditalRepository) {
+    public CampusController(CampusRepository campusRepository,
+            com.example.energif.repository.CampusEditalRepository campusEditalRepository,
+            CampusEditalTurnoRepository campusEditalTurnoRepository) {
         this.campusRepository = campusRepository;
         this.campusEditalRepository = campusEditalRepository;
+        this.campusEditalTurnoRepository = campusEditalTurnoRepository;
     }
 
     @GetMapping("/novo")
@@ -42,29 +49,48 @@ public class CampusController {
     }
 
     // No CampusController - método listarCampus:
-@GetMapping("/list")
-public String listarCampus(Model model) {
-    var campuses = campusRepository.findAll(Sort.by("nome"));
-    
-    // Inicializar valores nulos
-    for (Campus campus : campuses) {
-        if (campus.getNumeroVagasReservadas() == null) {
-            campus.setNumeroVagasReservadas(0);
-        }
-        if (campus.getNumeroVagasAmplaConcorrencia() == null) {
-            campus.setNumeroVagasAmplaConcorrencia(0);
-        }
-        if (campus.getVagasReservadasOcupadas() == null) {
-            campus.setVagasReservadasOcupadas(0);
-        }
-        if (campus.getVagasAmplaOcupadas() == null) {
-            campus.setVagasAmplaOcupadas(0);
-        }
+    // Agora busca CampusEditalTurno para exibir linhas separadas por turno
+    @GetMapping("/list")
+    public String listarCampus(Model model) {
+        var turnos = campusEditalRepository.findAll()
+                .stream()
+                .flatMap(ce -> java.util.Optional.ofNullable(ce.getTurnos()).orElse(java.util.Collections.emptyList())
+                        .stream()
+                        .map(t -> Map.ofEntries(
+                                Map.entry("id", t.getId()),
+                                Map.entry("campusId", ce.getCampus().getId()),
+                                Map.entry("campusNome", ce.getCampus().getNome()),
+                                Map.entry("editalId", ce.getEdital() != null ? ce.getEdital().getId() : null),
+                                Map.entry("editalDescricao",
+                                        ce.getEdital() != null && ce.getEdital().getDescricao() != null
+                                                ? ce.getEdital().getDescricao()
+                                                : "Sem Edital"),
+                                Map.entry("turno", t.getTurno()),
+                                Map.entry("numeroVagasReservadas", t.getNumeroVagasReservadas()),
+                                Map.entry("numeroVagasAmplaConcorrencia", t.getNumeroVagasAmplaConcorrencia()),
+                                Map.entry("numeroVagasCadastroReserva", t.getNumeroVagasCadastroReserva()),
+                                Map.entry("vagasReservadasOcupadas", t.getVagasReservadasOcupadas()),
+                                Map.entry("vagasAmplaOcupadas", t.getVagasAmplaOcupadas()),
+                                Map.entry("vagasReservadasDisponiveis", t.getVagasReservadasDisponiveis()),
+                                Map.entry("vagasAmplaDisponiveis", t.getVagasAmplaDisponiveis()),
+                                Map.entry("campusEditalTurnoId", t.getId()))))
+                .sorted((a, b) -> {
+                    int cmpCampus = Objects.toString(a.get("campusNome"), "")
+                            .compareTo(Objects.toString(b.get("campusNome"), ""));
+                    if (cmpCampus != 0)
+                        return cmpCampus;
+                    int cmpEdital = Objects.toString(a.get("editalDescricao"), "")
+                            .compareTo(Objects.toString(b.get("editalDescricao"), ""));
+                    if (cmpEdital != 0)
+                        return cmpEdital;
+                    return Objects.toString(a.get("turno"), "").compareTo(Objects.toString(b.get("turno"), ""));
+                })
+                .toList();
+
+        model.addAttribute("turnos", turnos);
+        model.addAttribute("campuses", campusRepository.findAll(Sort.by("nome")));
+        return "lista-campus";
     }
-    
-    model.addAttribute("campuses", campuses);
-    return "lista-campus";
-}
 
     @PostMapping
     public String criar(@ModelAttribute Campus campus) {
@@ -74,6 +100,7 @@ public String listarCampus(Model model) {
         if (existing != null) {
             existing.setNumeroVagasAmplaConcorrencia(campus.getNumeroVagasAmplaConcorrencia());
             existing.setNumeroVagasReservadas(campus.getNumeroVagasReservadas());
+            existing.setNumeroVagasCadastroReserva(campus.getNumeroVagasCadastroReserva());
             campusRepository.save(existing);
             return "redirect:/campus/novo?updated";
         }
@@ -83,71 +110,129 @@ public String listarCampus(Model model) {
 
     // CORREÇÃO: Usar @PathVariable em vez de @RequestParam
     // No CampusController - adicione estes métodos:
-@PostMapping("/{id}/editar-ajax")
-@ResponseBody
-public ResponseEntity<?> editarCampusAjax(@PathVariable("id") Long id,
-                                         @RequestParam Integer numeroVagasReservadas,
-                                         @RequestParam Integer numeroVagasAmplaConcorrencia) {
-    try {
-        Campus campus = campusRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Campus não encontrado"));
-        
-        campus.setNumeroVagasReservadas(numeroVagasReservadas);
-        campus.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
-        Campus campusSalvo = campusRepository.save(campus);
-        
-        // Retornar os dados atualizados
-        Map<String, Object> response = new HashMap<>();
-        response.put("success", true);
-        response.put("campus", Map.of(
-            "id", campusSalvo.getId(),
-            "nome", campusSalvo.getNome(),
-            "numeroVagasReservadas", campusSalvo.getNumeroVagasReservadas(),
-            "numeroVagasAmplaConcorrencia", campusSalvo.getNumeroVagasAmplaConcorrencia(),
-            "vagasReservadasOcupadas", campusSalvo.getVagasReservadasOcupadas(),
-            "vagasAmplaOcupadas", campusSalvo.getVagasAmplaOcupadas(),
-            "vagasReservadasDisponiveis", campusSalvo.getVagasReservadasDisponiveis(),
-            "vagasAmplaDisponiveis", campusSalvo.getVagasAmplaDisponiveis()
-        ));
-        
-        return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        logger.error("Erro ao editar campus {}", id, e);
-        return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
-    }
-}
+    @PostMapping("/{id}/editar-ajax")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> editarCampusAjax(@PathVariable("id") Long id,
+            @RequestParam Integer numeroVagasReservadas,
+            @RequestParam Integer numeroVagasAmplaConcorrencia,
+            @RequestParam(required = false, defaultValue = "0") Integer numeroVagasCadastroReserva) {
+        logger.info("Iniciando atualização do turno/campus ID: {}", id);
 
-@PostMapping("/{id}/excluir-ajax")
-@ResponseBody
-public ResponseEntity<?> excluirCampusAjax(@PathVariable("id") Long id) {
-    try {
-        Campus campus = campusRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Campus não encontrado"));
-        
-        // Verifica se há candidatos associados ao campus
-        // Agora getCandidatos() retorna List<Candidato>, então podemos usar isEmpty()
-        if (campus.getCandidatos() != null && !campus.getCandidatos().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "error", "Não é possível excluir o campus pois existem " + 
-                         campus.getCandidatos().size() + " candidatos associados a ele."
-            ));
-        }
+        try {
+            // Verificar se é um ID de CampusEditalTurno (novo) ou Campus (legado)
+            CampusEditalTurno turno = campusEditalTurnoRepository.findById(id).orElse(null);
 
-        // Verifica se há registros em campus_edital que referenciam este campus
-        java.util.List<com.example.energif.model.CampusEdital> vinculacoes = campusEditalRepository.findAllByCampusId(id);
-        if (vinculacoes != null && !vinculacoes.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "error", "Não é possível excluir o campus pois existem " + vinculacoes.size() + " vínculos com editais (remova-os primeiro)."
-            ));
+            if (turno != null) {
+                logger.info("Atualizando CampusEditalTurno ID: {}", id);
+                // Atualizar turno
+                turno.setNumeroVagasReservadas(numeroVagasReservadas);
+                turno.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
+                turno.setNumeroVagasCadastroReserva(numeroVagasCadastroReserva);
+                CampusEditalTurno turnoSalvo = campusEditalTurnoRepository.save(turno);
+
+                Map<String, Object> campusData = new HashMap<>();
+                campusData.put("id", turnoSalvo.getId());
+                campusData.put("turno", turnoSalvo.getTurno());
+                campusData.put("numeroVagasReservadas", turnoSalvo.getNumeroVagasReservadas());
+                campusData.put("numeroVagasAmplaConcorrencia", turnoSalvo.getNumeroVagasAmplaConcorrencia());
+                campusData.put("numeroVagasCadastroReserva", turnoSalvo.getNumeroVagasCadastroReserva());
+                campusData.put("vagasReservadasOcupadas", turnoSalvo.getVagasReservadasOcupadas());
+                campusData.put("vagasAmplaOcupadas", turnoSalvo.getVagasAmplaOcupadas());
+                campusData.put("vagasReservadasDisponiveis", turnoSalvo.getVagasReservadasDisponiveis());
+                campusData.put("vagasAmplaDisponiveis", turnoSalvo.getVagasAmplaDisponiveis());
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("campus", campusData);
+
+                logger.info("Turno atualizado com sucesso. Respondendo com JSON...");
+                return ResponseEntity.ok(response);
+            } else {
+                logger.info("CampusEditalTurno não encontrado. Tentando como Campus legacy ID: {}", id);
+                // Tentar como Campus (compatibilidade legada)
+                Campus campus = campusRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("Campus ou Turno não encontrado"));
+
+                campus.setNumeroVagasReservadas(numeroVagasReservadas);
+                campus.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
+                campus.setNumeroVagasCadastroReserva(numeroVagasCadastroReserva);
+                Campus campusSalvo = campusRepository.save(campus);
+
+                // Retornar os dados atualizados
+                Map<String, Object> campusData = new HashMap<>();
+                campusData.put("id", campusSalvo.getId());
+                campusData.put("nome", campusSalvo.getNome());
+                campusData.put("numeroVagasReservadas", campusSalvo.getNumeroVagasReservadas());
+                campusData.put("numeroVagasAmplaConcorrencia", campusSalvo.getNumeroVagasAmplaConcorrencia());
+                campusData.put("numeroVagasCadastroReserva", campusSalvo.getNumeroVagasCadastroReserva());
+                campusData.put("vagasReservadasOcupadas", campusSalvo.getVagasReservadasOcupadas());
+                campusData.put("vagasAmplaOcupadas", campusSalvo.getVagasAmplaOcupadas());
+                campusData.put("vagasReservadasDisponiveis", campusSalvo.getVagasReservadasDisponiveis());
+                campusData.put("vagasAmplaDisponiveis", campusSalvo.getVagasAmplaDisponiveis());
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("campus", campusData);
+
+                logger.info("Campus atualizado com sucesso. Respondendo com JSON...");
+                return ResponseEntity.ok(response);
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao editar campus/turno {}: {}", id, e.getMessage(), e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
-        
-        campusRepository.deleteById(id);
-        return ResponseEntity.ok(Map.of("success", true));
-    } catch (Exception e) {
-        logger.error("Erro ao excluir campus {}", id, e);
-        return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
     }
-}
+
+    @PostMapping("/{id}/excluir-ajax")
+    @ResponseBody
+    public ResponseEntity<?> excluirCampusAjax(@PathVariable("id") Long id) {
+        try {
+            // Verificar se é um ID de CampusEditalTurno (novo) ou Campus (legado)
+            CampusEditalTurno turno = campusEditalTurnoRepository.findById(id).orElse(null);
+
+            if (turno != null) {
+                // Excluir turno
+                // Verificar se há candidatos associados ao turno
+                if (turno.getVagasReservadasOcupadas() > 0 || turno.getVagasAmplaOcupadas() > 0) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "success", false,
+                            "error", "Não é possível excluir este turno pois existem candidatos associados."));
+                }
+
+                campusEditalTurnoRepository.deleteById(id);
+                return ResponseEntity.ok(Map.of("success", true));
+            } else {
+                // Tentar como Campus (compatibilidade legada)
+                Campus campus = campusRepository.findById(id)
+                        .orElseThrow(() -> new IllegalArgumentException("Campus ou Turno não encontrado"));
+
+                // Verifica se há candidatos associados ao campus
+                if (campus.getCandidatos() != null && !campus.getCandidatos().isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "success", false,
+                            "error", "Não é possível excluir o campus pois existem " +
+                                    campus.getCandidatos().size() + " candidatos associados a ele."));
+                }
+
+                // Verifica se há registros em campus_edital que referenciam este campus
+                java.util.List<com.example.energif.model.CampusEdital> vinculacoes = campusEditalRepository
+                        .findAllByCampusId(id);
+                if (vinculacoes != null && !vinculacoes.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "success", false,
+                            "error", "Não é possível excluir o campus pois existem " + vinculacoes.size()
+                                    + " vínculos com editais (remova-os primeiro)."));
+                }
+
+                campusRepository.deleteById(id);
+                return ResponseEntity.ok(Map.of("success", true));
+            }
+        } catch (Exception e) {
+            logger.error("Erro ao excluir campus/turno {}", id, e);
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
 }

@@ -360,12 +360,13 @@ body {
     overflow-x: auto; /* Permite scroll horizontal no body se necessário */
 }
 
-/* Container principal - aumentado para acomodar mais colunas */
+/* Container principal - responsivo */
 .container-app {
-    max-width: 1800px; /* Aumentado de 1400px para 1800px */
+    max-width: 1600px;
     margin: 0 auto;
     padding: 20px;
-    min-width: 1200px; /* Largura mínima para garantir que não fique muito compacto */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Hero section */
@@ -639,8 +640,9 @@ input[type="file"]:focus {
 .styled {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem; /* Reduzido ligeiramente para caber mais colunas */
-    min-width: 1400px; /* Largura mínima para garantir que todas as colunas sejam visíveis */
+    font-size: 0.9rem;
+    table-layout: fixed;
+    word-wrap: break-word;
 }
 
 .styled thead {
@@ -651,29 +653,18 @@ input[type="file"]:focus {
 }
 
 .styled th {
-    padding: 12px 10px; /* Reduzido ligeiramente o padding */
+    padding: 12px 8px;
     text-align: left;
     color: white;
     font-weight: 600;
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
     position: relative;
+    vertical-align: middle;
 }
-
-/* Larguras específicas para colunas */
-.styled th:nth-child(1) { width: 80px; } /* ID */
-.styled th:nth-child(2) { width: 200px; } /* Nome */
-.styled th:nth-child(3) { width: 140px; } /* CPF */
-.styled th:nth-child(4) { width: 150px; } /* Campus */
-.styled th:nth-child(5) { width: 180px; } /* Edital */
-.styled th:nth-child(6) { width: 120px; } /* Data Nasc. */
-.styled th:nth-child(7) { width: 100px; } /* Turno */
-.styled th:nth-child(8) { width: 100px; } /* Gênero */
-.styled th:nth-child(9) { width: 140px; } /* Inscrição */
-.styled th:nth-child(10) { width: 150px; } /* Situação */
-.styled th:nth-child(11) { width: 200px; } /* Motivo */
 
 .styled tbody tr {
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
@@ -685,24 +676,10 @@ input[type="file"]:focus {
 }
 
 .styled td {
-    padding: 10px 8px; /* Reduzido ligeiramente o padding */
+    padding: 10px 8px;
     vertical-align: middle;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Ajustes específicos para colunas de dados */
-.styled td:nth-child(2) { /* Nome */
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.styled td:nth-child(5) { /* Edital */
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Formulário de situação */
@@ -737,7 +714,6 @@ input[type="file"]:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    ring: 2px solid #3b82f6;
 }
 
 .situacao-form select:hover {
@@ -1042,34 +1018,26 @@ input[type="file"]:focus {
 /* Responsividade */
 @media (max-width: 1400px) {
     .container-app {
-        max-width: 95%;
-        min-width: auto;
+        padding: 15px;
     }
     
     .toolbar {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 16px;
+        gap: 10px;
     }
     
-    .toolbar > * {
-        margin-left: 0 !important;
+    .styled {
+        font-size: 0.85rem;
     }
     
-    .search-form {
-        max-width: none;
-        margin-left: 0;
-    }
-    
-    input[type="text"][name="editalDescricao"] {
-        min-width: 250px;
+    .styled th,
+    .styled td {
+        padding: 10px 6px;
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .container-app {
-        padding: 10px;
-        max-width: 100%;
+        padding: 12px;
     }
     
     .hero {
@@ -1080,9 +1048,34 @@ input[type="file"]:focus {
         font-size: 2rem;
     }
     
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .toolbar form {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .toolbar > * {
+        margin-left: 0 !important;
+        width: 100%;
+    }
+    
+    .search-form {
+        max-width: 100%;
+        margin-left: 0;
+    }
+    
+    input[type="text"][name="editalDescricao"] {
+        width: 100%;
+        min-width: auto;
+    }
+    
     .styled {
         font-size: 0.8rem;
-        min-width: 1200px;
     }
     
     .styled th,
@@ -1091,8 +1084,74 @@ input[type="file"]:focus {
     }
     
     .btn {
-        padding: 8px 16px;
+        padding: 8px 14px;
         font-size: 0.85rem;
+    }
+    
+    .situacao-form {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .situacao-form select {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .situacao-form .btn {
+        width: 100%;
+    }
+    
+    .motivo-input form {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .motivo-input select {
+        width: 100%;
+        min-width: auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-app {
+        padding: 10px;
+    }
+    
+    .hero {
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .title h1 {
+        font-size: 1.75rem;
+    }
+    
+    .subtitle {
+        font-size: 1rem;
+    }
+    
+    .toolbar {
+        gap: 10px;
+    }
+    
+    .styled {
+        font-size: 0.75rem;
+    }
+    
+    .styled th,
+    .styled td {
+        padding: 6px 4px;
+    }
+    
+    .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .btn-sm {
+        padding: 4px 8px;
+        font-size: 0.7rem;
     }
     
     .search-text {
@@ -1100,63 +1159,120 @@ input[type="file"]:focus {
     }
     
     .search-button {
-        padding: 10px;
+        padding: 8px;
     }
     
-    .situacao-form select {
-        min-width: 120px;
-        font-size: 0.8rem;
-    }
-    
-    .motivo-input {
-        min-width: 150px;
-    }
-    
-    .pagination {
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-    
-    input[type="text"][name="editalDescricao"] {
-        min-width: 200px;
+    .search-input {
         font-size: 0.85rem;
+    }
+    
+    .search-input::placeholder {
+        font-size: 0.75rem;
+    }
+    
+    .toolbar select {
+        width: 100%;
+        min-width: auto;
+        font-size: 0.85rem;
+    }
+    
+    .toolbar label {
+        font-size: 0.85rem;
+    }
+    
+    .muted {
+        font-size: 0.75rem;
     }
 }
 
 @media (max-width: 480px) {
+    .container-app {
+        padding: 8px;
+    }
+    
     .hero {
-        padding: 15px;
+        padding: 12px;
+        margin-bottom: 15px;
     }
     
     .title h1 {
         font-size: 1.5rem;
+        margin-bottom: 6px;
     }
     
     .subtitle {
-        font-size: 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .toolbar {
+        gap: 8px;
+        flex-direction: column;
     }
     
     .toolbar form {
         flex-direction: column;
-        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .toolbar > * {
+        width: 100%;
     }
     
     input[type="file"] {
         width: 100%;
+        font-size: 0.75rem;
+    }
+    
+    input[type="text"][name="editalDescricao"] {
+        width: 100%;
+        font-size: 0.8rem;
+        padding: 6px 8px;
     }
     
     .styled {
+        font-size: 0.7rem;
+        table-layout: auto;
+    }
+    
+    .styled th,
+    .styled td {
+        padding: 4px 3px;
+        font-size: 0.65rem;
+    }
+    
+    .styled th {
+        font-size: 0.6rem;
+    }
+    
+    .btn {
+        padding: 5px 10px;
         font-size: 0.75rem;
-        min-width: 1100px;
+    }
+    
+    .btn-sm {
+        padding: 3px 6px;
+        font-size: 0.65rem;
     }
     
     .situacao-form {
         flex-direction: column;
         gap: 4px;
+        width: 100%;
     }
     
     .situacao-form select {
-        min-width: 100px;
+        width: 100%;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+    }
+    
+    .situacao-form .btn {
+        width: 100%;
+        padding: 5px 8px;
+    }
+    
+    .motivo-input {
+        display: none;
     }
     
     .motivo-input form {
@@ -1164,9 +1280,35 @@ input[type="file"]:focus {
         gap: 4px;
     }
     
-    input[type="text"][name="editalDescricao"] {
-        min-width: 100%;
+    .motivo-input select {
+        width: 100%;
+        font-size: 0.75rem;
+    }
+    
+    .motivo-input .btn {
+        width: 100%;
+    }
+    
+    .toolbar select {
+        width: 100%;
         font-size: 0.8rem;
+    }
+    
+    .toolbar label {
+        font-size: 0.75rem;
+    }
+    
+    .muted {
+        font-size: 0.65rem;
+    }
+    
+    .pagination {
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .pagination .btn {
+        width: 100%;
     }
 }
 
@@ -1260,7 +1402,6 @@ input[type="file"]:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    ring: 2px solid #3b82f6;
 }
 
 .motivo-input select:hover {

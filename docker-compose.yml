@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:15
+    container_name: energif-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: energif
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      # avoid conflict with any host Postgres server on 5432 -> publish to 5433
+      - "5433:5432"
+    volumes:
+      - energif-db-data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: energif-app
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      # connect to the postgres service inside compose (port 5432)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/energif
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      # keep application port default
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  energif-db-data:
+    name: energif-db-data

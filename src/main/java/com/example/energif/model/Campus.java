@@ -19,6 +19,7 @@ public class Campus {
 
     private Integer numeroVagasReservadas = 0;
     private Integer numeroVagasAmplaConcorrencia = 0;
+    private Integer numeroVagasCadastroReserva = 0;
     
     // VAGAS OCUPADAS - IMPORTANTE: inicializar com 0
     private Integer vagasReservadasOcupadas = 0;
@@ -70,6 +71,14 @@ public class Campus {
         this.numeroVagasAmplaConcorrencia = numeroVagasAmplaConcorrencia != null ? numeroVagasAmplaConcorrencia : 0;
     }
 
+    public Integer getNumeroVagasCadastroReserva() {
+        return numeroVagasCadastroReserva != null ? numeroVagasCadastroReserva : 0;
+    }
+
+    public void setNumeroVagasCadastroReserva(Integer numeroVagasCadastroReserva) {
+        this.numeroVagasCadastroReserva = numeroVagasCadastroReserva != null ? numeroVagasCadastroReserva : 0;
+    }
+
     public Integer getVagasReservadasOcupadas() {
         return vagasReservadasOcupadas != null ? vagasReservadasOcupadas : 0;
     }
@@ -102,6 +111,19 @@ public class Campus {
 
     public void setVagas(List<Vaga> vagas) {
         this.vagas = vagas != null ? vagas : new ArrayList<>();
+    }
+
+    // Explicit getters for id and nome to avoid relying entirely on Lombok in all environments
+    public Long getId() {
+        return id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
     }
 
     // MÉTODO PARA ADICIONAR CANDIDATO

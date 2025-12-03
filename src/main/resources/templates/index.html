@@ -19,46 +19,54 @@
         <h2>O que você pode fazer</h2>
         <div class="features">
             <div class="feature">
-                <h3>Cadastro de Candidato</h3>
+                <h3>📋 Cadastro de Candidato</h3>
                 <p>Adicionar manualmente um candidato com CPF, data de nascimento, campus, turno e vínculo com um edital.</p>
                 <p><a th:href="@{/candidatos/novo}" class="btn btn-primary">Ir para cadastro</a></p>
             </div>
 
             <div class="feature">
-                <h3>Listar e importar</h3>
+                <h3>📊 Listar e Importar Candidatos</h3>
                 <p>Ver a lista de candidatos, importar um arquivo XLSX com múltiplos cadastros e filtrar por nome/campus/CPF.</p>
                 <p><a th:href="@{/candidatos/list}" class="btn btn-ghost">Ir para lista/import</a></p>
             </div>
 
             <div class="feature">
-                <h3>Cadastro de Campus</h3>
-                <p>Adicionar ou atualizar um campus com número de vagas reservadas e de ampla concorrência.</p>
-                <p><a th:href="@{/campus/novo}" class="btn btn-ghost">Cadastrar campus</a></p>
+                <h3>🏫 Gerenciar Campus</h3>
+                <p>Adicionar, editar ou visualizar campus com número de vagas reservadas e de ampla concorrência.</p>
+                <p>
+                    <a th:href="@{/campus/novo}" class="btn btn-ghost">Cadastrar campus</a>
+                    <a th:href="@{/campus/list}" class="btn btn-primary">Ver todos os campus</a>
+                </p>
             </div>
-            <!---
+
             <div class="feature">
-                <h3>Vagas por Campus & Edital</h3>
-                <p>Visão administrativa das vagas por campus e edital — útil para verificar a importação e ajustes por edital.</p>
-                <p><a th:href="@{/campus-edital/list}" class="btn btn-ghost">Ver vagas por edital</a></p>
+                <h3>📌 Gerenciar Edital</h3>
+                <p>Criar e gerenciar editais para organizar candidatos por período de inscrição.</p>
+                <p><a th:href="@{/motivos/list}" class="btn btn-ghost">Ver editais e motivos</a></p>
             </div>
-            ---->
-                <div class="feature">
-        <h3>Gerenciar Campus</h3>
-        <p>Adicionar, editar ou visualizar campus com número de vagas reservadas e de ampla concorrência.</p>
-        <p>
-            <a th:href="@{/campus/novo}" class="btn btn-ghost">Cadastrar campus</a>
-            <a th:href="@{/campus/list}" class="btn btn-primary">Ver todos os campus</a>
-        </p>
-    </div>
+
+            <div class="feature">
+                <h3>⏰ Gerenciar Turnos por Campus-Edital</h3>
+                <p>Configurar múltiplos turnos (MANHÃ, TARDE, NOITE, INTEGRAL) com vagas específicas para cada campus e edital.</p>
+                <p><a th:href="@{/campus-edital-turno/list}" class="btn btn-primary">Gerenciar turnos</a></p>
+            </div>
+
+            <div class="feature">
+                <h3>✅ Habilitar Candidatos</h3>
+                <p>Habilitar ou desabilitar candidatos para as vagas, com suporte a múltiplos turnos.</p>
+                <p><a th:href="@{/candidatos/list}" class="btn btn-ghost">Gerenciar candidatos</a></p>
+            </div>
         </div>
 
         <hr />
         <div class="notes-section">
-            <h3>Notas rápidas</h3>
+            <h3>📝 Notas rápidas</h3>
             <ul>
-                <li>Importador XLSX detecta cabeçalhos por aproximação — verifique se a coluna de CPF é nomeada exatamente como <code>CPF</code>.</li>
-                <li>A ordenação "Mais recentes" usa data e hora da inscrição para mostrar os cadastros mais novos primeiro.</li>
-                <li>Use o campo de pesquisa na lista para localizar candidatos por nome, campus ou CPF.</li>
+                <li>✨ <strong>Turnos Automáticas:</strong> Ao importar candidatos, as turnos são criadas automaticamente se não existirem.</li>
+                <li>🔄 <strong>Importador XLSX:</strong> Detecta cabeçalhos por aproximação — verifique se as colunas estão nomeadas corretamente (Campus (cidade) e turno:, Nome Completo, Gênero, Data de Nascimento, CPF).</li>
+                <li>📅 <strong>Ordenação:</strong> A ordenação "Mais recentes" usa data e hora da inscrição para mostrar os cadastros mais novos primeiro.</li>
+                <li>🔍 <strong>Filtros:</strong> Use os campos de pesquisa nas listas para localizar candidatos por nome, campus, CPF ou turno.</li>
+                <li>👥 <strong>Vagas por Turno:</strong> Cada turno tem seus próprios contadores de vagas reservadas e ampla concorrência.</li>
             </ul>
         </div>
     </div>

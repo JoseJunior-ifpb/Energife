@@ -50,8 +50,8 @@
                 <label class="muted">Habilitado:</label>
                 <select name="habilitado">
                     <option value="">Todos</option>
-                    <option value="sim" th:selected="${selectedHabilitado == 'sim'}">Habilitados</option>
-                    <option value="nao" th:selected="${selectedHabilitado == 'nao'}">Não habilitados</option>
+                    <option value="sim" th:selected="${selectedClassificado == 'sim'}">Classificados</option>
+                    <option value="nao" th:selected="${selectedClassificado == 'nao'}">Não classificados</option>
                 </select>
                 <button type="submit" class="btn btn-ghost">Filtrar</button>
                 <button type="submit" class="btn btn-primary" formtarget="_blank" formaction="/candidatos/report">Gerar relatório</button>
@@ -125,24 +125,33 @@
                     <td>
                         <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post" class="situacao-form">
                             <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'nao') ? 'table-cell' : 'none';">
-                                <option th:value="'sim'" th:selected="${cand.habilitado == true}">Habilitado</option>
-                                <option th:value="'nao'" th:selected="${cand.habilitado == false}">Não habilitado</option>
-                                <option value="" th:selected="${cand.habilitado == null || cand.habilitado == ''}">Selecione</option>
+                            <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'nao' || this.value == 'eliminado') ? 'table-cell' : 'none';">
+                                <option th:value="'classificado'" th:selected="${cand.situacao != null and cand.situacao.name() == 'CLASSIFICADO'}">Classificado</option>
+                                <option th:value="'nao'" th:selected="${cand.situacao != null and cand.situacao.name() == 'NAO_CLASSIFICADO'}">Não classificado</option>
+                                <option th:value="'habilitado'" th:selected="${cand.situacao != null and cand.situacao.name() == 'HABILITADO'}">Habilitado</option>
+                                <option th:value="'eliminado'" th:selected="${cand.situacao != null and cand.situacao.name() == 'ELIMINADO'}">Eliminado</option>
+                                <!-- Opção para Cadastro de Reserva (suplente) - desabilitado se não houver vagas -->
+                                <option th:value="'cadastro'" 
+                                    th:selected="${cand.situacao != null and cand.situacao.name() == 'CADASTRO_RESERVA'}"
+                                    th:disabled="${cand.campus == null or cand.campus.numeroVagasCadastroReserva == null or cand.campus.numeroVagasCadastroReserva <= 0}"
+                                    th:title="${(cand.campus != null and (cand.campus.numeroVagasCadastroReserva == null or cand.campus.numeroVagasCadastroReserva <= 0)) ? 'Nenhuma vaga de cadastro de reserva configurada' : ''}">
+                                    Cadastro de Reserva
+                                </option>
                             </select>
-                            <input type="hidden" name="habilitado" th:value="${cand.habilitado}" />
+                            <!-- no hidden situacao: only the select should send the chosen situacao -->
                             <button type="submit" class="btn btn-sm">Salvar</button>
                         </form>
                     </td>
-                    <td class="motivo-input" th:style="${cand.habilitado == true} ? 'display:none' : 'display:table-cell'">
+                    <td class="motivo-input" th:style="${cand.situacao == null or cand.situacao.name() == 'NAO_CLASSIFICADO' or cand.situacao.name() == 'ELIMINADO'} ? 'display:table-cell' : 'display:none'">
                         <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post">
                             <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <input type="hidden" name="situacao" value="nao" />
+                            <!-- situacao will be appended dynamically by JS when the motivo form is submitted
+                                 (so it matches the currently-selected status in the situacao select above) -->
                             <select name="motivo">
-                                <option value="" th:selected="${cand.motivoNaoHabilitacao == null || cand.motivoNaoHabilitacao == ''}">Selecione um motivo</option>
+                                <option value="" th:selected="${cand.motivoNaoClassificacao == null || cand.motivoNaoClassificacao == ''}">Selecione um motivo</option>
                                 <option th:each="m : ${motivos}" th:value="${m.descricao}"
                                     th:text="${m.descricao}"
-                                    th:selected="${m.descricao == cand.motivoNaoHabilitacao}"></option>
+                                    th:selected="${m.descricao == cand.motivoNaoClassificacao}"></option>
                             </select>
                             <button type="submit" class="btn btn-sm">Salvar</button>
                         </form>
@@ -212,7 +221,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Intercept motivo forms and submit via AJAX to avoid full page reload
     document.querySelectorAll('.motivo-input form').forEach(function(form) {
-        form.addEventListener('submit', async function(ev) {
+                form.addEventListener('submit', async function(ev) {
             ev.preventDefault();
             const tr = form.closest('tr');
             // Show a saving indicator
@@ -225,8 +234,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             indicator.textContent = 'Salvando...';
 
-            try {
+                try {
                 const fd = new FormData(form);
+                    // ensure the 'situacao' field is present and matches the selected situacao for this row
+                    // the situacao select is in the neighboring situacao-form; find it and add/override value
+                    try {
+                        const situacaoSelect = tr.querySelector('select[name="situacao"]');
+                        if (situacaoSelect) {
+                            // ensure the FormData contains the chosen situacao
+                            fd.set('situacao', situacaoSelect.value);
+                        }
+                    } catch (err) {
+                        // ignore - fallback will submit whatever the form already had
+                    }
                 const saveButton = form.querySelector('button[type=submit]');
                 if (saveButton) saveButton.disabled = true;
                 const res = await fetch(form.action, {
@@ -306,11 +326,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                // If the selected situacao is 'nao', show motivo cell; otherwise hide it
+                // If the selected situacao is 'nao' or 'eliminado', show motivo cell; otherwise hide it
                 const situacaoVal = (new FormData(form)).get('situacao');
                 const motivoCell = tr.querySelector('.motivo-input');
                 if (motivoCell) {
-                    motivoCell.style.display = (situacaoVal === 'nao') ? 'table-cell' : 'none';
+                    motivoCell.style.display = (situacaoVal === 'nao' || situacaoVal === 'eliminado') ? 'table-cell' : 'none';
                 }
 
                 indicator.textContent = 'Salvo';

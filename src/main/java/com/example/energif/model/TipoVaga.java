@@ -4,8 +4,9 @@ package com.example.energif.model;
 
 
 public enum TipoVaga {
-    RESERVADA("Reservada"),
-    AMPLA_CONCORRENCIA("Ampla Concorrência");
+    RESERVADA("Reservada para Mulheres"),
+    AMPLA_CONCORRENCIA("Ampla Concorrência"),
+    CADASTRO_RESERVA("Cadastro de Reserva (Suplente)");
     
     private final String descricao;
     

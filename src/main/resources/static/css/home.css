@@ -109,10 +109,8 @@
 
         .feature h3::before {
             content: '';
-            width: 8px;
-            height: 8px;
-            background: #667eea;
-            border-radius: 50%;
+            width: 0;
+            height: 0;
             flex-shrink: 0;
         }
 
@@ -315,13 +313,4 @@
 
         .feature:hover::after {
             left: 100%;
-        }
-
-        /* Ícones nos botões */
-        .btn-primary::after {
-            content: '🚀';
-        }
-
-        .btn-ghost::after {
-            content: '📋';
         }

@@ -13,10 +13,13 @@ import com.example.energif.model.CampusEdital;
 import com.example.energif.model.Candidato;
 import com.example.energif.model.Edital;
 import com.example.energif.model.TipoVaga;
+import com.example.energif.model.SituacaoCandidato;
+import com.example.energif.model.CampusEditalTurno;
 import com.example.energif.repository.CampusEditalRepository;
 import com.example.energif.repository.CampusRepository;
 import com.example.energif.repository.CandidatoRepository;
 import com.example.energif.repository.EditalRepository;
+import com.example.energif.repository.CampusEditalTurnoRepository;
 
 @Service
 public class CandidatoService {
@@ -27,15 +30,18 @@ public class CandidatoService {
     private final EditalRepository editalRepository;
     private final CampusEditalRepository campusEditalRepository;
     private final CampusRepository campusRepository;
+    private final CampusEditalTurnoRepository campusEditalTurnoRepository;
 
     public CandidatoService(CandidatoRepository candidatoRepository, 
                           EditalRepository editalRepository, 
                           CampusEditalRepository campusEditalRepository,
-                          CampusRepository campusRepository) {
+                          CampusRepository campusRepository,
+                          CampusEditalTurnoRepository campusEditalTurnoRepository) {
         this.candidatoRepository = candidatoRepository;
         this.editalRepository = editalRepository;
         this.campusEditalRepository = campusEditalRepository;
         this.campusRepository = campusRepository;
+        this.campusEditalTurnoRepository = campusEditalTurnoRepository;
     }
 
     @Transactional
@@ -64,6 +70,20 @@ public class CandidatoService {
             if (numeroVagasReservadas != null) ce.setNumeroVagasReservadas(numeroVagasReservadas);
             if (numeroVagasAmplaConcorrencia != null) ce.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
             campusEditalRepository.save(ce);
+            // garantir um registro de turno 'UNICO' para compatibilidade com a nova modelagem
+            try {
+                CampusEditalTurno existing = campusEditalTurnoRepository.findByCampusEditalAndTurno(ce, "UNICO");
+                if (existing == null) {
+                    CampusEditalTurno cet = new CampusEditalTurno();
+                    cet.setCampusEdital(ce);
+                    cet.setTurno("UNICO");
+                    cet.setNumeroVagasReservadas(ce.getNumeroVagasReservadas());
+                    cet.setNumeroVagasAmplaConcorrencia(ce.getNumeroVagasAmplaConcorrencia());
+                    campusEditalTurnoRepository.save(cet);
+                }
+            } catch (Exception ex) {
+                logger.warn("Não foi possível criar registro CampusEditalTurno 'UNICO' automaticamente: {}", ex.getMessage());
+            }
         }
 
         // 4. Atualizar contador de inscritos no edital
@@ -90,34 +110,65 @@ public void habilitarCandidato(Long candidatoId, String motivo) {
         throw new IllegalStateException("Candidato não possui campus definido");
     }
     
-    // VERIFICAR SE JÁ ESTÁ HABILITADO
-    if (Boolean.TRUE.equals(candidato.getHabilitado())) {
-        logger.info("Candidato {} já está habilitado", candidatoId);
+    // VERIFICAR SE JÁ ESTÁ CLASSIFICADO
+    if (candidato.getSituacao() == SituacaoCandidato.CLASSIFICADO) {
+        logger.info("Candidato {} já está classificado", candidatoId);
         return;
     }
     
-    // Verificar disponibilidade de vagas
+    // Verificar disponibilidade de vagas - primeiro tentar por turno (campus+edital+turno)
+    CampusEditalTurno turnoRecord = null;
     boolean vagaDisponivel = false;
-    if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
-        vagaDisponivel = campus.temVagaReservadaDisponivel();
-    } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
-        vagaDisponivel = campus.temVagaAmplaDisponivel();
+    if (candidato.getCampus() != null && candidato.getEdital() != null && candidato.getTurno() != null) {
+        turnoRecord = campusEditalTurnoRepository.findByCampusAndEditalAndTurno(candidato.getCampus(), candidato.getEdital(), candidato.getTurno());
     }
-    
+
+    if (turnoRecord != null) {
+        if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+            vagaDisponivel = turnoRecord.getVagasReservadasDisponiveis() > 0;
+        } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+            vagaDisponivel = turnoRecord.getVagasAmplaDisponiveis() > 0;
+        } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+            vagaDisponivel = turnoRecord.getVagasCadastroReservaDisponiveis() > 0;
+        }
+    } else {
+        // fallback para comportamento legado baseado no campus
+        if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+            vagaDisponivel = campus.temVagaReservadaDisponivel();
+        } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+            vagaDisponivel = campus.temVagaAmplaDisponivel();
+        } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+            Integer vagas = campus.getNumeroVagasCadastroReserva();
+            vagaDisponivel = vagas != null && vagas > 0;
+        }
+    }
+
     if (!vagaDisponivel) {
         throw new IllegalStateException("Não há vagas disponíveis para o tipo selecionado no campus " + campus.getNome());
     }
-    
-    // Atualizar contador de vagas ocupadas
-    if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
-        campus.setVagasReservadasOcupadas(campus.getVagasReservadasOcupadas() + 1);
-    } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
-        campus.setVagasAmplaOcupadas(campus.getVagasAmplaOcupadas() + 1);
+
+    // Atualizar contador de vagas ocupadas (priorizar registro por turno)
+    if (turnoRecord != null) {
+        if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+            turnoRecord.setVagasReservadasOcupadas(turnoRecord.getVagasReservadasOcupadas() + 1);
+        } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+            turnoRecord.setVagasAmplaOcupadas(turnoRecord.getVagasAmplaOcupadas() + 1);
+        } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+            turnoRecord.setVagasCadastroReservaOcupadas(turnoRecord.getVagasCadastroReservaOcupadas() + 1);
+        }
+        campusEditalTurnoRepository.save(turnoRecord);
+    } else {
+        if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+            campus.setVagasReservadasOcupadas(campus.getVagasReservadasOcupadas() + 1);
+        } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+            campus.setVagasAmplaOcupadas(campus.getVagasAmplaOcupadas() + 1);
+        }
+        // CADASTRO_RESERVA não é rastreado no nível de Campus (apenas por turno); nenhuma alteração local necessária
     }
     
     // Habilitar o candidato
-    candidato.setHabilitado(true);
-    candidato.setMotivoNaoHabilitacao(null);
+    candidato.setSituacao(SituacaoCandidato.CLASSIFICADO);
+    candidato.setMotivoNaoClassificacao(null);
     
     campusRepository.save(campus);
     candidatoRepository.save(candidato);
@@ -152,45 +203,75 @@ public Map<String, Object> habilitarCandidatoComFeedback(Long candidatoId, Strin
         logger.info("Candidato: {}, Campus: {}, Tipo Vaga: {}", 
                    candidato.getNome(), campus.getNome(), candidato.getTipoVaga());
         
-        // VERIFICAR SE JÁ ESTÁ HABILITADO
-        if (Boolean.TRUE.equals(candidato.getHabilitado())) {
-            logger.info("Candidato {} já está habilitado", candidatoId);
+        // VERIFICAR SE JÁ ESTÁ CLASSIFICADO
+        if (candidato.getSituacao() == SituacaoCandidato.CLASSIFICADO) {
+            logger.info("Candidato {} já está classificado", candidatoId);
             resultado.put("sucesso", true);
-            resultado.put("mensagem", "Candidato já estava habilitado");
-            resultado.put("jaHabilitado", true);
+            resultado.put("mensagem", "Candidato já estava classificado");
+            resultado.put("jaClassificado", true);
             return resultado;
         }
         
-        // Verificar disponibilidade de vagas
+        // Verificar disponibilidade de vagas (priorizar registro por turno)
+        CampusEditalTurno turnoRecord = null;
+        if (candidato.getCampus() != null && candidato.getEdital() != null && candidato.getTurno() != null) {
+            turnoRecord = campusEditalTurnoRepository.findByCampusAndEditalAndTurno(candidato.getCampus(), candidato.getEdital(), candidato.getTurno());
+        }
+
         boolean vagaDisponivel = false;
         int vagasDisponiveis = 0;
         int vagasOcupadas = 0;
         int vagasTotais = 0;
-        
-        if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
-            vagaDisponivel = campus.temVagaReservadaDisponivel();
-            vagasDisponiveis = campus.getVagasReservadasDisponiveis();
-            vagasOcupadas = campus.getVagasReservadasOcupadas();
-            vagasTotais = campus.getNumeroVagasReservadas();
-            logger.info("Vagas Reservadas - Ocupadas: {}/{}, Disponíveis: {}", 
-                       vagasOcupadas, vagasTotais, vagasDisponiveis);
-        } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
-            vagaDisponivel = campus.temVagaAmplaDisponivel();
-            vagasDisponiveis = campus.getVagasAmplaDisponiveis();
-            vagasOcupadas = campus.getVagasAmplaOcupadas();
-            vagasTotais = campus.getNumeroVagasAmplaConcorrencia();
-            logger.info("Vagas Ampla - Ocupadas: {}/{}, Disponíveis: {}", 
-                       vagasOcupadas, vagasTotais, vagasDisponiveis);
+
+        if (turnoRecord != null) {
+            if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                vagaDisponivel = turnoRecord.getVagasReservadasDisponiveis() > 0;
+                vagasDisponiveis = turnoRecord.getVagasReservadasDisponiveis();
+                vagasOcupadas = turnoRecord.getVagasReservadasOcupadas();
+                vagasTotais = turnoRecord.getNumeroVagasReservadas();
+                logger.info("[Turno] Vagas Reservadas - Ocupadas: {}/{}, Disponíveis: {}", vagasOcupadas, vagasTotais, vagasDisponiveis);
+            } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                vagaDisponivel = turnoRecord.getVagasAmplaDisponiveis() > 0;
+                vagasDisponiveis = turnoRecord.getVagasAmplaDisponiveis();
+                vagasOcupadas = turnoRecord.getVagasAmplaOcupadas();
+                vagasTotais = turnoRecord.getNumeroVagasAmplaConcorrencia();
+                logger.info("[Turno] Vagas Ampla - Ocupadas: {}/{}, Disponíveis: {}", vagasOcupadas, vagasTotais, vagasDisponiveis);
+            } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+                vagaDisponivel = turnoRecord.getVagasCadastroReservaDisponiveis() > 0;
+                vagasDisponiveis = turnoRecord.getVagasCadastroReservaDisponiveis();
+                vagasOcupadas = turnoRecord.getVagasCadastroReservaOcupadas();
+                vagasTotais = turnoRecord.getNumeroVagasCadastroReserva();
+                logger.info("[Turno] Vagas Cadastro Reserva - Ocupadas: {}/{}, Disponíveis: {}", vagasOcupadas, vagasTotais, vagasDisponiveis);
+            }
+        } else {
+            if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                vagaDisponivel = campus.temVagaReservadaDisponivel();
+                vagasDisponiveis = campus.getVagasReservadasDisponiveis();
+                vagasOcupadas = campus.getVagasReservadasOcupadas();
+                vagasTotais = campus.getNumeroVagasReservadas();
+                logger.info("Vagas Reservadas - Ocupadas: {}/{}, Disponíveis: {}", vagasOcupadas, vagasTotais, vagasDisponiveis);
+            } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                vagaDisponivel = campus.temVagaAmplaDisponivel();
+                vagasDisponiveis = campus.getVagasAmplaDisponiveis();
+                vagasOcupadas = campus.getVagasAmplaOcupadas();
+                vagasTotais = campus.getNumeroVagasAmplaConcorrencia();
+                logger.info("Vagas Ampla - Ocupadas: {}/{}, Disponíveis: {}", vagasOcupadas, vagasTotais, vagasDisponiveis);
+            } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+                vagasDisponiveis = campus.getNumeroVagasCadastroReserva() != null ? campus.getNumeroVagasCadastroReserva() : 0;
+                vagasOcupadas = 0; // Campus não tem rastreamento de ocupação para cadastro reserva (apenas turno)
+                vagasTotais = vagasDisponiveis;
+                vagaDisponivel = vagasDisponiveis > 0;
+                logger.info("Vagas Cadastro Reserva - Ocupadas: {}/{}, Disponíveis: {}", vagasOcupadas, vagasTotais, vagasDisponiveis);
+            }
         }
-        
+
         if (!vagaDisponivel) {
             logger.error("NÃO há vagas disponíveis para o candidato {} no campus {}", candidatoId, campus.getNome());
             resultado.put("sucesso", false);
             String tipo = (candidato.getTipoVaga() == TipoVaga.RESERVADA) ? "reservadas" : "de ampla concorrência";
             String mensagem = "Não há vagas " + tipo + " disponíveis no campus " + campus.getNome() + ".";
-            // If total is zero, hint that admin must configure vacancies
             if (vagasTotais == 0) {
-                mensagem += " Por favor, configure o número de vagas disponíveis no cadastro do campus antes de habilitar candidatos.";
+                mensagem += " Por favor, configure o número de vagas disponíveis no cadastro do campus/turno antes de habilitar candidatos.";
             }
             resultado.put("mensagem", mensagem);
             resultado.put("vagasDisponiveis", vagasDisponiveis);
@@ -200,30 +281,46 @@ public Map<String, Object> habilitarCandidatoComFeedback(Long candidatoId, Strin
             resultado.put("campusNome", campus.getNome());
             return resultado;
         }
-        
-        // ATUALIZAR CONTADOR DE VAGAS OCUPADAS
-        if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
-            int novasOcupadas = campus.getVagasReservadasOcupadas() + 1;
-            campus.setVagasReservadasOcupadas(novasOcupadas);
-            logger.info("Vagas Reservadas: {} → {}", vagasOcupadas, novasOcupadas);
-        } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
-            int novasOcupadas = campus.getVagasAmplaOcupadas() + 1;
-            campus.setVagasAmplaOcupadas(novasOcupadas);
-            logger.info("Vagas Ampla: {} → {}", vagasOcupadas, novasOcupadas);
+
+        // ATUALIZAR CONTADOR DE VAGAS OCUPADAS (priorizar turnoRecord)
+        if (turnoRecord != null) {
+            if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                int novasOcupadas = turnoRecord.getVagasReservadasOcupadas() + 1;
+                turnoRecord.setVagasReservadasOcupadas(novasOcupadas);
+                logger.info("[Turno] Vagas Reservadas: {} → {}", vagasOcupadas, novasOcupadas);
+            } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                int novasOcupadas = turnoRecord.getVagasAmplaOcupadas() + 1;
+                turnoRecord.setVagasAmplaOcupadas(novasOcupadas);
+                logger.info("[Turno] Vagas Ampla: {} → {}", vagasOcupadas, novasOcupadas);
+            } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+                int novasOcupadas = turnoRecord.getVagasCadastroReservaOcupadas() + 1;
+                turnoRecord.setVagasCadastroReservaOcupadas(novasOcupadas);
+                logger.info("[Turno] Vagas Cadastro Reserva: {} → {}", vagasOcupadas, novasOcupadas);
+            }
+            campusEditalTurnoRepository.save(turnoRecord);
+        } else {
+            if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                int novasOcupadas = campus.getVagasReservadasOcupadas() + 1;
+                campus.setVagasReservadasOcupadas(novasOcupadas);
+                logger.info("Vagas Reservadas: {} → {}", vagasOcupadas, novasOcupadas);
+            } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                int novasOcupadas = campus.getVagasAmplaOcupadas() + 1;
+                campus.setVagasAmplaOcupadas(novasOcupadas);
+                logger.info("Vagas Ampla: {} → {}", vagasOcupadas, novasOcupadas);
+            }
+            // CADASTRO_RESERVA não é rastreado no nível de Campus
+            Campus campusSalvo = campusRepository.save(campus);
+            logger.info("Campus salvo - Vagas Reservadas Ocupadas: {}, Vagas Ampla Ocupadas: {}", 
+                       campusSalvo.getVagasReservadasOcupadas(), 
+                       campusSalvo.getVagasAmplaOcupadas());
         }
         
-        // SALVAR PRIMEIRO O CAMPUS (para garantir as vagas ocupadas)
-        Campus campusSalvo = campusRepository.save(campus);
-        logger.info("Campus salvo - Vagas Reservadas Ocupadas: {}, Vagas Ampla Ocupadas: {}", 
-                   campusSalvo.getVagasReservadasOcupadas(), 
-                   campusSalvo.getVagasAmplaOcupadas());
-        
         // DEPOIS SALVAR O CANDIDATO
-        candidato.setHabilitado(true);
-        candidato.setMotivoNaoHabilitacao(null);
+        candidato.setSituacao(SituacaoCandidato.CLASSIFICADO);
+        candidato.setMotivoNaoClassificacao(null);
         
         Candidato candidatoSalvo = candidatoRepository.save(candidato);
-        logger.info("Candidato salvo - Habilitado: {}", candidatoSalvo.getHabilitado());
+        logger.info("Candidato salvo - Situação: {}", candidatoSalvo.getSituacao());
         
         resultado.put("sucesso", true);
         resultado.put("mensagem", "Candidato habilitado com sucesso!");
@@ -253,38 +350,63 @@ public void desabilitarCandidato(Long candidatoId, String motivo) {
     
     Campus campus = candidato.getCampus();
     
-    // Se estava habilitado, liberar a vaga
-    if (Boolean.TRUE.equals(candidato.getHabilitado()) && campus != null) {
+    // Se estava classificado, liberar a vaga (priorizar turnoRecord)
+    if (candidato.getSituacao() == SituacaoCandidato.CLASSIFICADO && campus != null) {
         logger.info("Liberando vaga do candidato habilitado");
         
+        CampusEditalTurno turnoRecord = null;
+        if (candidato.getCampus() != null && candidato.getEdital() != null && candidato.getTurno() != null) {
+            turnoRecord = campusEditalTurnoRepository.findByCampusAndEditalAndTurno(candidato.getCampus(), candidato.getEdital(), candidato.getTurno());
+        }
+
         int vagasAntes = 0;
         int vagasDepois = 0;
         
-        if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
-            vagasAntes = campus.getVagasReservadasOcupadas();
-            vagasDepois = Math.max(0, vagasAntes - 1);
-            campus.setVagasReservadasOcupadas(vagasDepois);
-            logger.info("Vagas Reservadas: {} → {}", vagasAntes, vagasDepois);
-        } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
-            vagasAntes = campus.getVagasAmplaOcupadas();
-            vagasDepois = Math.max(0, vagasAntes - 1);
-            campus.setVagasAmplaOcupadas(vagasDepois);
-            logger.info("Vagas Ampla: {} → {}", vagasAntes, vagasDepois);
+        if (turnoRecord != null) {
+            if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                vagasAntes = turnoRecord.getVagasReservadasOcupadas();
+                vagasDepois = Math.max(0, vagasAntes - 1);
+                turnoRecord.setVagasReservadasOcupadas(vagasDepois);
+                logger.info("[Turno] Vagas Reservadas: {} → {}", vagasAntes, vagasDepois);
+            } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                vagasAntes = turnoRecord.getVagasAmplaOcupadas();
+                vagasDepois = Math.max(0, vagasAntes - 1);
+                turnoRecord.setVagasAmplaOcupadas(vagasDepois);
+                logger.info("[Turno] Vagas Ampla: {} → {}", vagasAntes, vagasDepois);
+            } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+                vagasAntes = turnoRecord.getVagasCadastroReservaOcupadas();
+                vagasDepois = Math.max(0, vagasAntes - 1);
+                turnoRecord.setVagasCadastroReservaOcupadas(vagasDepois);
+                logger.info("[Turno] Vagas Cadastro Reserva: {} → {}", vagasAntes, vagasDepois);
+            }
+            campusEditalTurnoRepository.save(turnoRecord);
+            logger.info("Turno salvo - vagas atualizadas para turno {}", turnoRecord.getTurno());
+        } else {
+            if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                vagasAntes = campus.getVagasReservadasOcupadas();
+                vagasDepois = Math.max(0, vagasAntes - 1);
+                campus.setVagasReservadasOcupadas(vagasDepois);
+                logger.info("Vagas Reservadas: {} → {}", vagasAntes, vagasDepois);
+            } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                vagasAntes = campus.getVagasAmplaOcupadas();
+                vagasDepois = Math.max(0, vagasAntes - 1);
+                campus.setVagasAmplaOcupadas(vagasDepois);
+                logger.info("Vagas Ampla: {} → {}", vagasAntes, vagasDepois);
+            }
+            // CADASTRO_RESERVA não é rastreado no nível de Campus
+            Campus campusSalvo = campusRepository.save(campus);
+            logger.info("Campus salvo - Vagas Reservadas Ocupadas: {}, Vagas Ampla Ocupadas: {}", 
+                       campusSalvo.getVagasReservadasOcupadas(), 
+                       campusSalvo.getVagasAmplaOcupadas());
         }
-        
-        // SALVAR PRIMEIRO O CAMPUS
-        Campus campusSalvo = campusRepository.save(campus);
-        logger.info("Campus salvo - Vagas Reservadas Ocupadas: {}, Vagas Ampla Ocupadas: {}", 
-                   campusSalvo.getVagasReservadasOcupadas(), 
-                   campusSalvo.getVagasAmplaOcupadas());
     }
     
     // Desabilitar o candidato
-    candidato.setHabilitado(false);
-    candidato.setMotivoNaoHabilitacao(motivo);
+    candidato.setSituacao(SituacaoCandidato.NAO_CLASSIFICADO);
+    candidato.setMotivoNaoClassificacao(motivo);
     
     Candidato candidatoSalvo = candidatoRepository.save(candidato);
-    logger.info("Candidato salvo - Habilitado: {}", candidatoSalvo.getHabilitado());
+    logger.info("Candidato salvo - Situação: {}", candidatoSalvo.getSituacao());
     
     logger.info("=== DESABILITAÇÃO CONCLUÍDA ===");
 }
@@ -310,19 +432,37 @@ public void desabilitarCandidato(Long candidatoId, String motivo) {
         }
     }
 
-    // Método para validar se pode habilitar candidato
-    public boolean podeHabilitarCandidato(Long candidatoId) {
+    // Método para validar se pode classificar candidato
+    public boolean podeClassificarCandidato(Long candidatoId) {
         try {
             Candidato candidato = candidatoRepository.findById(candidatoId)
                 .orElseThrow(() -> new IllegalArgumentException("Candidato não encontrado"));
             
             Campus campus = candidato.getCampus();
             if (campus == null) return false;
-            
-            if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
-                return campus.temVagaReservadaDisponivel();
-            } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
-                return campus.temVagaAmplaDisponivel();
+            // Priorizar verificação por turno (campus+edital+turno)
+            CampusEditalTurno turnoRecord = null;
+            if (candidato.getCampus() != null && candidato.getEdital() != null && candidato.getTurno() != null) {
+                turnoRecord = campusEditalTurnoRepository.findByCampusAndEditalAndTurno(candidato.getCampus(), candidato.getEdital(), candidato.getTurno());
+            }
+
+            if (turnoRecord != null) {
+                if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                    return turnoRecord.getVagasReservadasDisponiveis() > 0;
+                } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                    return turnoRecord.getVagasAmplaDisponiveis() > 0;
+                } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+                    return turnoRecord.getVagasCadastroReservaDisponiveis() > 0;
+                }
+            } else {
+                if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                    return campus.temVagaReservadaDisponivel();
+                } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                    return campus.temVagaAmplaDisponivel();
+                } else if (candidato.getTipoVaga() == TipoVaga.CADASTRO_RESERVA) {
+                    Integer vagas = campus.getNumeroVagasCadastroReserva();
+                    return vagas != null && vagas > 0;
+                }
             }
             
             return false;
