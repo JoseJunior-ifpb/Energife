@@ -59,7 +59,7 @@ public class CandidatoService {
 
         Candidato saved = candidatoRepository.save(candidato);
 
-        // 3. Atualizar CampusEdital
+        // 3. Atualizar CampusEdital e criar CampusEditalTurno com turno correto
         if (saved.getEdital() != null && saved.getCampus() != null) {
             CampusEdital ce = campusEditalRepository.findByCampusAndEdital(saved.getCampus(), saved.getEdital());
             if (ce == null) {
@@ -70,19 +70,29 @@ public class CandidatoService {
             if (numeroVagasReservadas != null) ce.setNumeroVagasReservadas(numeroVagasReservadas);
             if (numeroVagasAmplaConcorrencia != null) ce.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
             campusEditalRepository.save(ce);
-            // garantir um registro de turno 'UNICO' para compatibilidade com a nova modelagem
+            
+            // Criar CampusEditalTurno com o turno correto do candidato
+            // Se o candidato não tem turno definido, usar "UNICO" como padrão
+            String turnoDoTurno = (saved.getTurno() != null && !saved.getTurno().isBlank()) ? saved.getTurno() : "UNICO";
+            
             try {
-                CampusEditalTurno existing = campusEditalTurnoRepository.findByCampusEditalAndTurno(ce, "UNICO");
+                CampusEditalTurno existing = campusEditalTurnoRepository.findByCampusEditalAndTurno(ce, turnoDoTurno);
                 if (existing == null) {
                     CampusEditalTurno cet = new CampusEditalTurno();
                     cet.setCampusEdital(ce);
-                    cet.setTurno("UNICO");
+                    cet.setTurno(turnoDoTurno);
                     cet.setNumeroVagasReservadas(ce.getNumeroVagasReservadas());
                     cet.setNumeroVagasAmplaConcorrencia(ce.getNumeroVagasAmplaConcorrencia());
+                    logger.info("Criando CampusEditalTurno: Campus={}, Edital={}, Turno={}", 
+                               saved.getCampus().getNome(), saved.getEdital().getDescricao(), turnoDoTurno);
                     campusEditalTurnoRepository.save(cet);
+                } else {
+                    logger.debug("CampusEditalTurno já existe: Campus={}, Edital={}, Turno={}", 
+                               saved.getCampus().getNome(), saved.getEdital().getDescricao(), turnoDoTurno);
                 }
             } catch (Exception ex) {
-                logger.warn("Não foi possível criar registro CampusEditalTurno 'UNICO' automaticamente: {}", ex.getMessage());
+                logger.warn("Não foi possível criar/atualizar registro CampusEditalTurno para turno '{}': {}", 
+                           turnoDoTurno, ex.getMessage());
             }
         }
 
