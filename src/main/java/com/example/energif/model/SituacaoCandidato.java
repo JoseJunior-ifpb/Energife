@@ -6,9 +6,10 @@ package com.example.energif.model;
 public enum SituacaoCandidato {
     CLASSIFICADO("Classificado"),
     HABILITADO("Habilitado"),
-    NAO_CLASSIFICADO("Não classificado"),
     CADASTRO_RESERVA("Cadastro de Reserva"),
-    ELIMINADO("Eliminado");
+    ELIMINADO("Eliminado"),
+    PENDENTE("Pendente");
+
 
     private final String descricao;
 

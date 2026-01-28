@@ -4,9 +4,98 @@
     <meta charset="UTF-8" />
     <title>Lista de Candidatos</title>
     <link rel="stylesheet" href="/css/styles.css" />
-    
+    <style>
+        .alert {
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .alert-icon {
+            display: flex;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .alert-success .alert-icon {
+            color: #28a745;
+        }
+        
+        .alert-warning .alert-icon {
+            color: #ffc107;
+        }
+        
+        .alert-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke-width: 2;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .alert-message {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .alert-close {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        
+        .alert-success .alert-close {
+            color: #155724;
+        }
+        
+        .alert-warning .alert-close {
+            color: #856404;
+        }
+        
+        .alert-close:hover {
+            opacity: 1;
+        }
+        
+        .alert-close svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+    </style>
 </head>
 <body>
+<!-- Container para notificações no topo da tela -->
+<div id="notifications-container" style="position:fixed;top:20px;right:20px;z-index:10000;max-width:400px;display:flex;flex-direction:column;gap:12px;"></div>
 <div class="container-app">
     <div class="hero">
         <div class="title">
@@ -19,8 +108,8 @@
             <a th:href="@{/motivos/list}" class="btn btn-ghost">Motivos</a>
             <div style="margin-left:12px;display:flex;align-items:center;gap:8px">
                 <label class="muted" style="font-size:0.9rem">Ordenar por:</label>
-                <a th:href="@{/candidatos/list(order='newest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, idade=${selectedIdade}, habilitado=${selectedHabilitado}, turno=${selectedTurno})}" th:classappend="${selectedOrder=='newest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais recentes</a>
-                <a th:href="@{/candidatos/list(order='oldest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, idade=${selectedIdade}, habilitado=${selectedHabilitado}, turno=${selectedTurno})}" th:classappend="${selectedOrder=='oldest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais antigos</a>
+                <a th:href="@{/candidatos/list(order='newest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, idade=${selectedIdade}, situacao=${selectedSituacao}, turno=${selectedTurno})}" th:classappend="${selectedOrder=='newest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais recentes</a>
+                <a th:href="@{/candidatos/list(order='oldest', q=${q}, campusId=${selectedCampus}, genero=${selectedGenero}, idade=${selectedIdade}, situacao=${selectedSituacao}, turno=${selectedTurno})}" th:classappend="${selectedOrder=='oldest'} ? ' btn-primary' : ' btn-ghost'" class="btn">Mais antigos</a>
             </div>
             <form th:action="@{/candidatos/list}" method="get" style="margin-left:12px; display:inline-flex; align-items:center; gap:8px">
                 <input type="hidden" name="order" th:value="${selectedOrder}" />
@@ -47,11 +136,14 @@
                     <option value="">Todos</option>
                     <option th:each="t : ${turnos}" th:value="${t}" th:text="${t}" th:selected="${t == selectedTurno}"></option>
                 </select>
-                <label class="muted">Habilitado:</label>
-                <select name="habilitado">
+                <label class="muted">Situação:</label>
+                <select name="situacao">
                     <option value="">Todos</option>
-                    <option value="sim" th:selected="${selectedClassificado == 'sim'}">Classificados</option>
-                    <option value="nao" th:selected="${selectedClassificado == 'nao'}">Não classificados</option>
+                    <option value="CLASSIFICADO" th:selected="${selectedSituacao == 'CLASSIFICADO'}">Classificado</option>
+                    <option value="HABILITADO" th:selected="${selectedSituacao == 'HABILITADO'}">Habilitado</option>
+                    <option value="CADASTRO_RESERVA" th:selected="${selectedSituacao == 'CADASTRO_RESERVA'}">Cadastro de Reserva</option>
+                    <option value="ELIMINADO" th:selected="${selectedSituacao == 'ELIMINADO'}">Eliminado</option>
+                    <option value="PENDENTE" th:selected="${selectedSituacao == 'PENDENTE'}">Pendente</option>
                 </select>
                 <button type="submit" class="btn btn-ghost">Filtrar</button>
                 <button type="submit" class="btn btn-primary" formtarget="_blank" formaction="/candidatos/report">Gerar relatório</button>
@@ -61,7 +153,7 @@
                 <input type="hidden" name="order" th:value="${selectedOrder}" />
                 <input type="hidden" name="genero" th:value="${selectedGenero}" />
                 <input type="hidden" name="idade" th:value="${selectedIdade}" />
-                <input type="hidden" name="habilitado" th:value="${selectedHabilitado}" />
+                <input type="hidden" name="situacao" th:value="${selectedSituacao}" />
                 
                 <div class="search-input-container"> 
                     <input 
@@ -125,13 +217,13 @@
                     <td>
                         <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post" class="situacao-form">
                             <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'nao' || this.value == 'eliminado') ? 'table-cell' : 'none';">
-                                <option th:value="'classificado'" th:selected="${cand.situacao != null and cand.situacao.name() == 'CLASSIFICADO'}">Classificado</option>
-                                <option th:value="'nao'" th:selected="${cand.situacao != null and cand.situacao.name() == 'NAO_CLASSIFICADO'}">Não classificado</option>
-                                <option th:value="'habilitado'" th:selected="${cand.situacao != null and cand.situacao.name() == 'HABILITADO'}">Habilitado</option>
-                                <option th:value="'eliminado'" th:selected="${cand.situacao != null and cand.situacao.name() == 'ELIMINADO'}">Eliminado</option>
+                            <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'ELIMINADO') ? 'table-cell' : 'none';">
+                                <option th:value="'PENDENTE'" th:selected="${cand.situacao != null and cand.situacao.name() == 'PENDENTE'}">Pendente</option>
+                                <option th:value="'CLASSIFICADO'" th:selected="${cand.situacao != null and cand.situacao.name() == 'CLASSIFICADO'}">Classificado</option>
+                                <option th:value="'HABILITADO'" th:selected="${cand.situacao != null and cand.situacao.name() == 'HABILITADO'}">Habilitado</option>
+                                <option th:value="'ELIMINADO'" th:selected="${cand.situacao != null and cand.situacao.name() == 'ELIMINADO'}">Eliminado</option>
                                 <!-- Opção para Cadastro de Reserva (suplente) - desabilitado se não houver vagas -->
-                                <option th:value="'cadastro'" 
+                                <option th:value="'CADASTRO_RESERVA'" 
                                     th:selected="${cand.situacao != null and cand.situacao.name() == 'CADASTRO_RESERVA'}"
                                     th:disabled="${cand.campus == null or cand.campus.numeroVagasCadastroReserva == null or cand.campus.numeroVagasCadastroReserva <= 0}"
                                     th:title="${(cand.campus != null and (cand.campus.numeroVagasCadastroReserva == null or cand.campus.numeroVagasCadastroReserva <= 0)) ? 'Nenhuma vaga de cadastro de reserva configurada' : ''}">
@@ -169,26 +261,26 @@
                       end=${currentPage + 2 <= total - 1 ? currentPage + 2 : total - 1}">
 
             <div>
-                <a th:if="${currentPage > 0}" th:href="@{/candidatos/list(page=${currentPage-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}" class="btn">&laquo; Anterior</a>
+                <a th:if="${currentPage > 0}" th:href="@{/candidatos/list(page=${currentPage-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},situacao=${selectedSituacao},turno=${selectedTurno})}" class="btn">&laquo; Anterior</a>
                 <span th:if="${currentPage == 0}" class="btn disabled">&laquo; Anterior</span>
             </div>
 
             <div style="display:flex;gap:6px;align-items:center;">
-                <a th:if="${start > 0}" th:href="@{/candidatos/list(page=0,size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}" class="btn btn-ghost">1</a>
+                <a th:if="${start > 0}" th:href="@{/candidatos/list(page=0,size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},situacao=${selectedSituacao},turno=${selectedTurno})}" class="btn btn-ghost">1</a>
                 <span th:if="${start > 1}" class="muted">&hellip;</span>
 
                 <span th:each="i : ${#numbers.sequence(start, end)}">
-                    <a th:href="@{/candidatos/list(page=${i},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}"
+                    <a th:href="@{/candidatos/list(page=${i},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},situacao=${selectedSituacao},turno=${selectedTurno})}"
                        th:classappend="${i == currentPage} ? ' btn-primary' : ' btn-ghost'"
                        th:text="${i+1}">1</a>
                 </span>
 
                 <span th:if="${end < total - 2}" class="muted">&hellip;</span>
-                <a th:if="${end < total - 1}" th:href="@{/candidatos/list(page=${total-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}" class="btn btn-ghost" th:text="${total}">N</a>
+                <a th:if="${end < total - 1}" th:href="@{/candidatos/list(page=${total-1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},situacao=${selectedSituacao},turno=${selectedTurno})}" class="btn btn-ghost" th:text="${total}">N</a>
             </div>
 
             <div>
-                <a th:if="${currentPage < (total - 1)}" th:href="@{/candidatos/list(page=${currentPage+1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},habilitado=${selectedHabilitado},turno=${selectedTurno})}" class="btn">Próximo &raquo;</a>
+                <a th:if="${currentPage < (total - 1)}" th:href="@{/candidatos/list(page=${currentPage+1},size=${pageSize},order=${selectedOrder},q=${q},campusId=${selectedCampus},genero=${selectedGenero},idade=${selectedIdade},situacao=${selectedSituacao},turno=${selectedTurno})}" class="btn">Próximo &raquo;</a>
                 <span th:if="${currentPage >= (total - 1)}" class="btn disabled">Próximo &raquo;</span>
             </div>
         </div>
@@ -337,8 +429,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // show transient feedback about remaining vacancies when present
                 if (json && (json.vagasDisponiveis !== undefined || json.mensagem)) {
+                    const notificationsContainer = document.getElementById('notifications-container');
                     const alert = document.createElement('div');
                     alert.className = json.sucesso ? 'alert alert-success' : 'alert alert-warning';
+                    alert.style.minWidth = '380px';
+                    alert.style.boxShadow = '0 8px 24px rgba(0,0,0,0.25)';
+                    alert.style.animation = 'slideIn 0.3s ease-out';
                     // Create alert content
                     const content = document.createElement('div');
                     content.className = 'alert-content';
@@ -346,7 +442,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Add title if available
                     const title = document.createElement('div');
                     title.className = 'alert-title';
-                    title.textContent = json.sucesso ? 'Sucesso' : 'Atenção';
+                    title.textContent = json.sucesso ? 'Sucesso!' : 'Atenção';
                     content.appendChild(title);
                     
                     // Add message
@@ -380,9 +476,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     alert.appendChild(content);
                     alert.appendChild(closeBtn);
                     
-                    // append alert to the cell that contains the situacao form (it's visible)
-                    const formCell = form.closest('td') || tr.querySelector('td:last-child') || tr;
-                    formCell.appendChild(alert);
+                    // append alert to the notifications container at the top
+                    if (notificationsContainer) {
+                        notificationsContainer.appendChild(alert);
+                    }
                     // fade out after a few seconds
                     setTimeout(() => {
                         alert.style.transition = 'opacity 0.6s, transform 0.6s';

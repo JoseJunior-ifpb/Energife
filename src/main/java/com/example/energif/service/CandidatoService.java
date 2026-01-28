@@ -412,7 +412,7 @@ public void desabilitarCandidato(Long candidatoId, String motivo) {
     }
     
     // Desabilitar o candidato
-    candidato.setSituacao(SituacaoCandidato.NAO_CLASSIFICADO);
+    candidato.setSituacao(SituacaoCandidato.ELIMINADO);
     candidato.setMotivoNaoClassificacao(motivo);
     
     Candidato candidatoSalvo = candidatoRepository.save(candidato);
@@ -479,6 +479,109 @@ public void desabilitarCandidato(Long candidatoId, String motivo) {
         } catch (Exception e) {
             logger.error("Erro ao verificar se pode habilitar candidato {}: {}", candidatoId, e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Marca um candidato como HABILITADO com verificação de vagas
+     * Diferente de CLASSIFICADO: HABILITADO reserva uma vaga no campus/turno
+     */
+    @Transactional
+    public Map<String, Object> marcarComoHabilitado(Long candidatoId) {
+        Map<String, Object> resultado = new HashMap<>();
+        
+        try {
+            Candidato candidato = candidatoRepository.findById(candidatoId)
+                    .orElseThrow(() -> new IllegalArgumentException("Candidato não encontrado"));
+
+            Campus campus = candidato.getCampus();
+            if (campus == null) {
+                resultado.put("sucesso", false);
+                resultado.put("mensagem", "Candidato não possui campus definido");
+                return resultado;
+            }
+
+            // Se já está HABILITADO, não precisa fazer nada
+            if (candidato.getSituacao() == SituacaoCandidato.HABILITADO) {
+                resultado.put("sucesso", true);
+                resultado.put("mensagem", "Candidato já estava marcado como habilitado");
+                return resultado;
+            }
+
+            // Verificar disponibilidade de vagas pelo turno
+            CampusEditalTurno turnoRecord = null;
+            boolean vagaDisponivel = false;
+            
+            if (candidato.getCampus() != null && candidato.getEdital() != null && candidato.getTurno() != null) {
+                turnoRecord = campusEditalTurnoRepository.findByCampusAndEditalAndTurno(
+                        candidato.getCampus(), candidato.getEdital(), candidato.getTurno());
+            }
+
+            if (turnoRecord != null) {
+                // Verificar se há vagas de acordo com o tipo de vaga
+                if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                    vagaDisponivel = turnoRecord.getVagasReservadasDisponiveis() > 0;
+                } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                    vagaDisponivel = turnoRecord.getVagasAmplaDisponiveis() > 0;
+                }
+                
+                if (!vagaDisponivel) {
+                    resultado.put("sucesso", false);
+                    resultado.put("mensagem", "Não há vagas disponíveis no campus " + campus.getNome() + 
+                                             " turno " + candidato.getTurno() + " para este tipo de vaga");
+                    resultado.put("campusNome", campus.getNome());
+                    resultado.put("turno", candidato.getTurno());
+                    return resultado;
+                }
+
+                // Consumir a vaga
+                if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                    turnoRecord.setVagasReservadasOcupadas(turnoRecord.getVagasReservadasOcupadas() + 1);
+                    logger.info("Vaga RESERVADA consumida para candidato {} no turno {}", 
+                               candidato.getNome(), candidato.getTurno());
+                } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                    turnoRecord.setVagasAmplaOcupadas(turnoRecord.getVagasAmplaOcupadas() + 1);
+                    logger.info("Vaga AMPLA CONCORRENCIA consumida para candidato {} no turno {}", 
+                               candidato.getNome(), candidato.getTurno());
+                }
+                campusEditalTurnoRepository.save(turnoRecord);
+            } else {
+                // Fallback para comportamento legado (sem turno específico)
+                if (candidato.getTipoVaga() == TipoVaga.RESERVADA) {
+                    vagaDisponivel = campus.temVagaReservadaDisponivel();
+                    if (!vagaDisponivel) {
+                        resultado.put("sucesso", false);
+                        resultado.put("mensagem", "Não há vagas RESERVADAS disponíveis no campus " + campus.getNome());
+                        return resultado;
+                    }
+                    campus.setVagasReservadasOcupadas(campus.getVagasReservadasOcupadas() + 1);
+                } else if (candidato.getTipoVaga() == TipoVaga.AMPLA_CONCORRENCIA) {
+                    vagaDisponivel = campus.temVagaAmplaDisponivel();
+                    if (!vagaDisponivel) {
+                        resultado.put("sucesso", false);
+                        resultado.put("mensagem", "Não há vagas de AMPLA CONCORRENCIA disponíveis no campus " + campus.getNome());
+                        return resultado;
+                    }
+                    campus.setVagasAmplaOcupadas(campus.getVagasAmplaOcupadas() + 1);
+                }
+                campusRepository.save(campus);
+            }
+
+            // Marcar candidato como HABILITADO
+            candidato.setSituacao(SituacaoCandidato.HABILITADO);
+            candidato.setMotivoNaoClassificacao(null);
+            candidatoRepository.save(candidato);
+
+            resultado.put("sucesso", true);
+            resultado.put("mensagem", "Candidato marcado como habilitado e vaga consumida com sucesso");
+            logger.info("Candidato {} marcado como HABILITADO com sucesso", candidatoId);
+            return resultado;
+
+        } catch (Exception ex) {
+            logger.error("Erro ao marcar candidato {} como habilitado: {}", candidatoId, ex.getMessage());
+            resultado.put("sucesso", false);
+            resultado.put("mensagem", "Erro ao processar: " + ex.getMessage());
+            return resultado;
         }
     }
 }

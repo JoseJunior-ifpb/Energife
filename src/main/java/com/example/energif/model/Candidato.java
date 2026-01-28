@@ -46,7 +46,7 @@ public class Candidato {
     private Edital edital;
 
     @Enumerated(EnumType.STRING)
-    private SituacaoCandidato situacao = SituacaoCandidato.NAO_CLASSIFICADO;
+    private SituacaoCandidato situacao = SituacaoCandidato.PENDENTE;
     
     private String motivoNaoClassificacao;
 
@@ -69,7 +69,7 @@ public class Candidato {
         if (Boolean.TRUE.equals(classificado)) {
             this.situacao = SituacaoCandidato.CLASSIFICADO;
         } else {
-            this.situacao = SituacaoCandidato.NAO_CLASSIFICADO;
+            this.situacao = SituacaoCandidato.PENDENTE;
         }
     }
     
