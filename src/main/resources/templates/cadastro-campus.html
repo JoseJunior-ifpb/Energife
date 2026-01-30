@@ -206,7 +206,7 @@ body {
                         <option value="">-- selecione um campus para editar --</option>
                         <option th:each="cp : ${campuses}"
                                 th:value="${cp.id}"
-                                th:attr="data-nome=${cp.nome},data-reservadas=${cp.numeroVagasReservadas},data-ampla=${cp.numeroVagasAmplaConcorrencia}"
+                                th:attr="data-nome=${cp.nome},data-reservadas=${cp.numeroVagasReservadas},data-ampla=${cp.numeroVagasAmplaConcorrencia},data-cadastro=${cp.numeroVagasCadastroReserva},data-classificado=${cp.numeroVagasClassificado},data-habilitado=${cp.numeroVagasHabilitado}"
                                 th:text="${cp.nome}">
                         </option>
                     </select>
@@ -224,12 +224,27 @@ body {
 
             <div class="form-row">
                 <div class="field">
-                    <label class="form-label">Número de Vagas Reservadas</label>
+                    <label class="form-label">Vagas Reservadas para Mulheres</label>
                     <input type="number" th:field="*{numeroVagasReservadas}" class="form-control" min="0" placeholder="0" />
                 </div>
                 <div class="field">
-                    <label class="form-label">Número de Vagas Ampla Concorrência</label>
+                    <label class="form-label">Vagas Ampla Concorrência</label>
                     <input type="number" th:field="*{numeroVagasAmplaConcorrencia}" class="form-control" min="0" placeholder="0" />
+                </div>
+                <div class="field">
+                    <label class="form-label">Vagas Cadastro de Reserva (Suplente)</label>
+                    <input type="number" th:field="*{numeroVagasCadastroReserva}" class="form-control" min="0" placeholder="0" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label class="form-label">Vagas para Classificado</label>
+                    <input type="number" th:field="*{numeroVagasClassificado}" class="form-control" min="0" placeholder="0" />
+                </div>
+                <div class="field">
+                    <label class="form-label">Vagas para Habilitado (até 50% a mais)</label>
+                    <input type="number" th:field="*{numeroVagasHabilitado}" class="form-control" min="0" placeholder="0" />
                 </div>
             </div>
 
@@ -277,16 +292,25 @@ body {
                 document.querySelector('input[name="nome"]').value = '';
                 document.querySelector('input[name="numeroVagasReservadas"]').value = '';
                 document.querySelector('input[name="numeroVagasAmplaConcorrencia"]').value = '';
+                document.querySelector('input[name="numeroVagasCadastroReserva"]').value = '';
+                document.querySelector('input[name="numeroVagasClassificado"]').value = '';
+                document.querySelector('input[name="numeroVagasHabilitado"]').value = '';
                 document.querySelector('input[name="id"]').value = '';
                 return;
             }
             const nome = sel.getAttribute('data-nome') || sel.textContent;
             const reservadas = sel.getAttribute('data-reservadas') || '';
             const ampla = sel.getAttribute('data-ampla') || '';
+            const cadastro = sel.getAttribute('data-cadastro') || '';
+            const classificado = sel.getAttribute('data-classificado') || '';
+            const habilitado = sel.getAttribute('data-habilitado') || '';
 
             document.querySelector('input[name="nome"]').value = nome;
             document.querySelector('input[name="numeroVagasReservadas"]').value = reservadas;
             document.querySelector('input[name="numeroVagasAmplaConcorrencia"]').value = ampla;
+            document.querySelector('input[name="numeroVagasCadastroReserva"]').value = cadastro;
+            document.querySelector('input[name="numeroVagasClassificado"]').value = classificado;
+            document.querySelector('input[name="numeroVagasHabilitado"]').value = habilitado;
             document.querySelector('input[name="id"]').value = id;
         });
     }

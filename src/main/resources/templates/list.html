@@ -91,6 +91,50 @@
             height: 20px;
             stroke-width: 2;
         }
+        /* Tabela mais larga e rolável */
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        /* força largura mínima para mostrar todas as colunas em telas maiores */
+        table.styled {
+            width: 1200px;
+            table-layout: auto;
+        }
+
+        /* evitar quebra de conteúdo nas células e melhorar espaçamento */
+        table.styled th, table.styled td {
+            white-space: nowrap;
+            padding: 10px 12px;
+            vertical-align: middle;
+        }
+
+        /* Alinha e padroniza largura dos selects de situação/motivo */
+        .situacao-form select, .motivo-input select {
+            width: 220px;
+            max-width: 100%;
+            box-sizing: border-box;
+            vertical-align: middle;
+            padding: 6px 8px;
+            font-size: 0.95rem;
+        }
+
+        /* Alinha o botão salvar à direita do select */
+        .situacao-form button.btn-sm {
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* Garante alinhamento da célula de motivo */
+        .motivo-input {
+            text-align: left;
+        }
+
+        /* Ajustes responsivos para telas pequenas */
+        @media (max-width: 900px) {
+            table.styled { width: 100%; }
+            .situacao-form select, .motivo-input select { width: 140px; }
+        }
     </style>
 </head>
 <body>
@@ -147,6 +191,7 @@
                 </select>
                 <button type="submit" class="btn btn-ghost">Filtrar</button>
                 <button type="submit" class="btn btn-primary" formtarget="_blank" formaction="/candidatos/report">Gerar relatório</button>
+                <button type="submit" class="btn btn-info" formtarget="_blank" formaction="/candidatos/report-preliminar">Gerar relatório preliminar</button>
             </form>
 
             <form th:action="@{/candidatos/list}" method="get" class="search-form" style="display:flex; align-items:center; gap:8px;">
@@ -235,18 +280,12 @@
                         </form>
                     </td>
                     <td class="motivo-input" th:style="${cand.situacao == null or cand.situacao.name() == 'NAO_CLASSIFICADO' or cand.situacao.name() == 'ELIMINADO'} ? 'display:table-cell' : 'display:none'">
-                        <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post">
-                            <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <!-- situacao will be appended dynamically by JS when the motivo form is submitted
-                                 (so it matches the currently-selected status in the situacao select above) -->
-                            <select name="motivo">
-                                <option value="" th:selected="${cand.motivoNaoClassificacao == null || cand.motivoNaoClassificacao == ''}">Selecione um motivo</option>
-                                <option th:each="m : ${motivos}" th:value="${m.descricao}"
-                                    th:text="${m.descricao}"
-                                    th:selected="${m.descricao == cand.motivoNaoClassificacao}"></option>
-                            </select>
-                            <button type="submit" class="btn btn-sm">Salvar</button>
-                        </form>
+                        <select name="motivo">
+                            <option value="" th:selected="${cand.motivoNaoClassificacao == null || cand.motivoNaoClassificacao == ''}">Selecione um motivo</option>
+                            <option th:each="m : ${motivos}" th:value="${m.descricao}"
+                                th:text="${m.descricao}"
+                                th:selected="${m.descricao == cand.motivoNaoClassificacao}"></option>
+                        </select>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(candidatos)}">
@@ -311,63 +350,7 @@
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Intercept motivo forms and submit via AJAX to avoid full page reload
-    document.querySelectorAll('.motivo-input form').forEach(function(form) {
-                form.addEventListener('submit', async function(ev) {
-            ev.preventDefault();
-            const tr = form.closest('tr');
-            // Show a saving indicator
-            let indicator = form.querySelector('.save-indicator');
-            if (!indicator) {
-                indicator = document.createElement('span');
-                indicator.className = 'save-indicator muted';
-                indicator.style.marginLeft = '8px';
-                form.appendChild(indicator);
-            }
-            indicator.textContent = 'Salvando...';
-
-                try {
-                const fd = new FormData(form);
-                    // ensure the 'situacao' field is present and matches the selected situacao for this row
-                    // the situacao select is in the neighboring situacao-form; find it and add/override value
-                    try {
-                        const situacaoSelect = tr.querySelector('select[name="situacao"]');
-                        if (situacaoSelect) {
-                            // ensure the FormData contains the chosen situacao
-                            fd.set('situacao', situacaoSelect.value);
-                        }
-                    } catch (err) {
-                        // ignore - fallback will submit whatever the form already had
-                    }
-                const saveButton = form.querySelector('button[type=submit]');
-                if (saveButton) saveButton.disabled = true;
-                const res = await fetch(form.action, {
-                    method: 'POST',
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                    body: fd,
-                    credentials: 'same-origin'
-                });
-                if (saveButton) saveButton.disabled = false;
-                if (!res.ok) {
-                    indicator.textContent = 'Erro';
-                    setTimeout(() => indicator.textContent = '', 2000);
-                    alert('Erro ao salvar motivo (status ' + res.status + ')');
-                    return;
-                }
-
-                indicator.textContent = 'Salvo';
-                tr.style.transition = 'background-color 0.4s';
-                tr.style.backgroundColor = '#e6ffe6';
-                setTimeout(function() { tr.style.backgroundColor = ''; }, 700);
-                setTimeout(() => { if (indicator) indicator.textContent = ''; }, 1200);
-            } catch (err) {
-                indicator.textContent = 'Erro rede';
-                setTimeout(() => indicator.textContent = '', 2000);
-                console.error(err);
-                alert('Erro de rede ao salvar motivo');
-            }
-        });
-    });
+    // motivo agora é um select simples; o envio é controlado pelo botão "Salvar" da situacao-form
     // Intercept situacao forms and submit via AJAX as well
     document.querySelectorAll('.situacao-form').forEach(function(form) {
         form.addEventListener('submit', async function(ev) {
@@ -388,6 +371,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 const fd = new FormData(form);
+                // include motivo (if present) so a single save button persists situacao + motivo
+                try {
+                    const motivoSelect = tr.querySelector('select[name="motivo"]');
+                    if (motivoSelect) {
+                        fd.set('motivo', motivoSelect.value);
+                    }
+                } catch (e) {
+                    // ignore
+                }
                 const res = await fetch(form.action, {
                     method: 'POST',
                     body: fd,
@@ -409,20 +401,58 @@ document.addEventListener('DOMContentLoaded', function() {
                     json = { sucesso: true };
                 }
 
-                // If server indicates failure, show message
+                // If server indicates failure, show message in notifications container (same place as saved alerts)
                 if (json && json.sucesso === false) {
                     indicator.textContent = 'Erro';
                     setTimeout(() => indicator.textContent = '', 2000);
                     const errMsg = json.mensagem || json.error || 'Erro ao atualizar situação';
-                    alert(errMsg);
+                    const notificationsContainer = document.getElementById('notifications-container');
+                    const alertEl = document.createElement('div');
+                    alertEl.className = 'alert alert-warning';
+                    alertEl.style.minWidth = '380px';
+                    alertEl.style.boxShadow = '0 8px 24px rgba(0,0,0,0.25)';
+
+                    const content = document.createElement('div');
+                    content.className = 'alert-content';
+                    const title = document.createElement('div');
+                    title.className = 'alert-title';
+                    title.textContent = 'Atenção';
+                    content.appendChild(title);
+                    const message = document.createElement('div');
+                    message.className = 'alert-message';
+                    message.textContent = errMsg;
+                    content.appendChild(message);
+
+                    const icon = document.createElement('div');
+                    icon.className = 'alert-icon';
+                    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'alert-close';
+                    closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+                    closeBtn.onclick = () => alertEl.remove();
+
+                    alertEl.appendChild(icon);
+                    alertEl.appendChild(content);
+                    alertEl.appendChild(closeBtn);
+
+                    if (notificationsContainer) {
+                        notificationsContainer.appendChild(alertEl);
+                    }
+                    setTimeout(() => {
+                        alertEl.style.transition = 'opacity 0.6s, transform 0.6s';
+                        alertEl.style.opacity = '0';
+                        alertEl.style.transform = 'translateY(-10px)';
+                        setTimeout(() => alertEl.remove(), 700);
+                    }, 5000);
                     return;
                 }
 
-                // If the selected situacao is 'nao' or 'eliminado', show motivo cell; otherwise hide it
+                // If the selected situacao requires motivo ('ELIMINADO' or 'NAO_CLASSIFICADO'), show motivo cell; otherwise hide it
                 const situacaoVal = (new FormData(form)).get('situacao');
                 const motivoCell = tr.querySelector('.motivo-input');
                 if (motivoCell) {
-                    motivoCell.style.display = (situacaoVal === 'nao' || situacaoVal === 'eliminado') ? 'table-cell' : 'none';
+                    motivoCell.style.display = (situacaoVal === 'ELIMINADO' || situacaoVal === 'NAO_CLASSIFICADO') ? 'table-cell' : 'none';
                 }
 
                 indicator.textContent = 'Salvo';

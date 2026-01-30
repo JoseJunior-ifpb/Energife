@@ -489,11 +489,12 @@
                     <th>Campus</th>
                     <th>Edital</th>
                     <th>Turno</th>
-                    <th>Vagas Reservadas</th>
+                    <th>Vagas Reservadas para Mulheres</th>
                     <th>Vagas Ampla Concorrência</th>
+                    <th>Vagas Classificado</th>
+                    <th>Vagas Habilitado</th>
                     <th>Cadastro de Reserva</th>
                     <th>Total de Vagas</th>
-                    <th>Vagas Ocupadas</th>
                     <th>Status</th>
                     <th>Ações</th>
                 </tr>
@@ -529,17 +530,24 @@
                     </td>
                     <td>
                         <div>
-                            <span th:id="'vagas-cadastro-total-' + ${turno.campusEditalTurnoId}" th:text="${turno.numeroVagasCadastroReserva}">0</span>
+                            <span th:id="'vagas-classificado-ocupadas-' + ${turno.campusEditalTurnoId}" th:text="${turno.vagasClassificadoOcupadas}">0</span> / 
+                            <span th:id="'vagas-classificado-total-' + ${turno.campusEditalTurnoId}" th:text="${turno.numeroVagasClassificado}">0</span>
                             <div class="muted" style="font-size: 0.8rem;">
-                                Suplentes
+                                <span th:id="'vagas-classificado-disponiveis-' + ${turno.campusEditalTurnoId}" th:text="${turno.vagasClassificadoDisponiveis}">0</span> disponíveis
                             </div>
                         </div>
                     </td>
                     <td>
-                        <strong th:id="'total-vagas-' + ${turno.campusEditalTurnoId}" th:text="${turno.numeroVagasReservadas + turno.numeroVagasAmplaConcorrencia + turno.numeroVagasCadastroReserva}">0</strong>
+                        <div>
+                            <span th:id="'vagas-habilitado-ocupadas-' + ${turno.campusEditalTurnoId}" th:text="${turno.vagasHabilitadoOcupadas}">0</span> / 
+                            <span th:id="'vagas-habilitado-total-' + ${turno.campusEditalTurnoId}" th:text="${turno.numeroVagasHabilitado}">0</span>
+                            <div class="muted" style="font-size: 0.8rem;">
+                                <span th:id="'vagas-habilitado-disponiveis-' + ${turno.campusEditalTurnoId}" th:text="${turno.vagasHabilitadoDisponiveis}">0</span> disponíveis
+                            </div>
+                        </div>
                     </td>
                     <td>
-                        <strong th:id="'total-ocupadas-' + ${turno.campusEditalTurnoId}" th:text="${turno.vagasReservadasOcupadas + turno.vagasAmplaOcupadas}">0</strong>
+                        <strong th:id="'total-vagas-' + ${turno.campusEditalTurnoId}" th:text="${turno.numeroVagasReservadas + turno.numeroVagasAmplaConcorrencia + turno.numeroVagasClassificado + turno.numeroVagasHabilitado + turno.numeroVagasCadastroReserva}">0</strong>
                     </td>
                     <td>
                         <span th:id="'status-' + ${turno.campusEditalTurnoId}" class="status-badge">
@@ -573,15 +581,15 @@
                                            min="0" 
                                            required />
                                 </div>
-                                <div class="input-group">
-                                    <label class="input-label">Cadastro Reserva</label>
-                                    <input type="number" 
-                                           th:id="'input-cadastro-reserva-' + ${turno.campusEditalTurnoId}"
-                                           th:value="${turno.numeroVagasCadastroReserva}" 
-                                           class="number-input input-cadastro-reserva" 
-                                           min="0" 
-                                           required />
-                                </div>
+                            <div class="input-group">
+                                <label class="input-label">Cadastro Reserva</label>
+                                <input type="number" 
+                                       th:id="'input-cadastro-reserva-' + ${turno.campusEditalTurnoId}"
+                                       th:value="${turno.numeroVagasCadastroReserva}" 
+                                       class="number-input input-cadastro-reserva" 
+                                       min="0" 
+                                       required />
+                            </div>
                                 <button type="button" 
                                         th:data-id="${turno.campusEditalTurnoId}"
                                         class="btn btn-sm btn-primary btn-atualizar">
@@ -601,7 +609,7 @@
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(turnos)}">
-                    <td colspan="10" class="text-center muted">
+                    <td colspan="11" class="text-center muted">
                         Nenhum campus cadastrado. 
                         <a th:href="@{/campus/novo}">Cadastre o primeiro campus</a>
                     </td>

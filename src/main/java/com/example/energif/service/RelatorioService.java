@@ -160,4 +160,99 @@ public class RelatorioService {
             doc.newPage();
         }
     }
+
+    public void gerarRelatorioPreliminar(Document doc, List<Candidato> candidatos, String editalDescricao) throws DocumentException {
+        Font titleFont = new Font(Font.HELVETICA, 14, Font.BOLD);
+        Font headerFont = new Font(Font.HELVETICA, 11, Font.BOLD, Color.BLACK);
+        Font normalFont = new Font(Font.HELVETICA, 9);
+
+        // Título com descrição do edital
+        String titulo = "Relação Preliminar dos Candidatos Inscritos no Edital " + 
+                        (editalDescricao != null ? editalDescricao : "PROEXC nº 06/2024") + 
+                        " - Ingresso no Qualifica Mais EnergIFE";
+        
+        PdfPTable titleTable = new PdfPTable(1);
+        titleTable.setWidthPercentage(100);
+        PdfPCell titleCell = new PdfPCell(new Phrase(titulo, titleFont));
+        titleCell.setBackgroundColor(CINZA_CLARO);
+        titleCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        titleCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        titleCell.setPadding(15);
+        titleCell.setBorderColor(Color.BLACK);
+        titleCell.setBorderWidth(2.5f);
+        titleTable.addCell(titleCell);
+        doc.add(titleTable);
+        doc.add(Chunk.NEWLINE);
+
+        DateTimeFormatter dateTimeF = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+        // Ordenar candidatos alfabeticamente por nome (ignorando acentos)
+        java.text.Collator collator = java.text.Collator.getInstance(new java.util.Locale("pt", "BR"));
+        collator.setStrength(java.text.Collator.PRIMARY); // Ignora acentos na comparação
+        
+        candidatos.sort((c1, c2) -> {
+            String n1 = c1.getNome() != null ? c1.getNome() : "";
+            String n2 = c2.getNome() != null ? c2.getNome() : "";
+            return collator.compare(n1.toUpperCase(), n2.toUpperCase());
+        });
+
+        // Criar tabela única com todas as colunas
+        PdfPTable table = new PdfPTable(new float[] { 2.5f, 3f, 2f });
+        table.setWidthPercentage(100);
+
+        // Cabeçalho da tabela
+        String[] headerTexts = { "Data e Hora da Inscrição", "Nome Completo", "Campus e Turno" };
+        for (String headerText : headerTexts) {
+            PdfPCell cell = new PdfPCell(new Phrase(headerText, headerFont));
+            cell.setBackgroundColor(CINZA_CLARO);
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            cell.setPadding(10);
+            cell.setBorderColor(Color.BLACK);
+            cell.setBorderWidth(2.5f);
+            table.addCell(cell);
+        }
+
+        // Adicionar dados dos candidatos
+        for (Candidato c : candidatos) {
+            // Data e Hora da Inscrição
+            String dateTime = "-";
+            if (c.getDataInscricao() != null && c.getHoraInscricao() != null) {
+                dateTime = java.time.LocalDateTime.of(c.getDataInscricao(), c.getHoraInscricao()).format(dateTimeF);
+            } else if (c.getDataInscricao() != null) {
+                dateTime = c.getDataInscricao().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            }
+
+            PdfPCell cellData = new PdfPCell(new Phrase(dateTime, normalFont));
+            cellData.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cellData.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            cellData.setPadding(8);
+            cellData.setBorderColor(CINZA_ESCURO);
+            cellData.setBorderWidth(1f);
+            table.addCell(cellData);
+
+            // Nome Completo
+            PdfPCell cellNome = new PdfPCell(new Phrase(c.getNome() != null ? c.getNome().toUpperCase() : "-", normalFont));
+            cellNome.setHorizontalAlignment(Element.ALIGN_LEFT);
+            cellNome.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            cellNome.setPadding(8);
+            cellNome.setBorderColor(CINZA_ESCURO);
+            cellNome.setBorderWidth(1f);
+            table.addCell(cellNome);
+
+            // Campus e Turno
+            String campusName = c.getCampus() != null ? c.getCampus().getNome() : "Sem Campus";
+            String turnoName = c.getTurno() != null ? c.getTurno() : "(sem turno)";
+            String campusTurnoStr = campusName + " - " + turnoName;
+            PdfPCell cellCampusTurno = new PdfPCell(new Phrase(campusTurnoStr, normalFont));
+            cellCampusTurno.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cellCampusTurno.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            cellCampusTurno.setPadding(8);
+            cellCampusTurno.setBorderColor(CINZA_ESCURO);
+            cellCampusTurno.setBorderWidth(1f);
+            table.addCell(cellCampusTurno);
+        }
+
+        doc.add(table);
+    }
 }

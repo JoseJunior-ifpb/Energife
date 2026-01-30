@@ -21,9 +21,15 @@ public class Campus {
     private Integer numeroVagasAmplaConcorrencia = 0;
     private Integer numeroVagasCadastroReserva = 0;
     
+    // VAGAS POR SITUAÇÃO: para rastrear candidatos CLASSIFICADO vs HABILITADO
+    private Integer numeroVagasClassificado = 0;      // vagas normais (ex: 10)
+    private Integer numeroVagasHabilitado = 0;        // vagas de habilitação (ex: 15 = 50% a mais)
+    
     // VAGAS OCUPADAS - IMPORTANTE: inicializar com 0
     private Integer vagasReservadasOcupadas = 0;
     private Integer vagasAmplaOcupadas = 0;
+    private Integer vagasClassificadoOcupadas = 0;
+    private Integer vagasHabilitadoOcupadas = 0;
 
     // RELAÇÃO COM CANDIDATOS - CORRIGIDA
     @OneToMany(mappedBy = "campus", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -52,6 +58,26 @@ public class Campus {
         int total = getNumeroVagasAmplaConcorrencia();
         int ocupadas = getVagasAmplaOcupadas();
         return Math.max(0, total - ocupadas);
+    }
+
+    public Integer getVagasClassificadoDisponiveis() {
+        int total = getNumeroVagasClassificado();
+        int ocupadas = getVagasClassificadoOcupadas();
+        return Math.max(0, total - ocupadas);
+    }
+
+    public Integer getVagasHabilitadoDisponiveis() {
+        int total = getNumeroVagasHabilitado();
+        int ocupadas = getVagasHabilitadoOcupadas();
+        return Math.max(0, total - ocupadas);
+    }
+
+    public boolean temVagaClassificadoDisponivel() {
+        return getVagasClassificadoDisponiveis() > 0;
+    }
+
+    public boolean temVagaHabilitadoDisponivel() {
+        return getVagasHabilitadoDisponiveis() > 0;
     }
 
     // GETTERS E SETTERS SEGUROS - sempre retornam valores, nunca null
@@ -93,6 +119,38 @@ public class Campus {
 
     public void setVagasAmplaOcupadas(Integer vagasAmplaOcupadas) {
         this.vagasAmplaOcupadas = vagasAmplaOcupadas != null ? vagasAmplaOcupadas : 0;
+    }
+
+    public Integer getNumeroVagasClassificado() {
+        return numeroVagasClassificado != null ? numeroVagasClassificado : 0;
+    }
+
+    public void setNumeroVagasClassificado(Integer numeroVagasClassificado) {
+        this.numeroVagasClassificado = numeroVagasClassificado != null ? numeroVagasClassificado : 0;
+    }
+
+    public Integer getNumeroVagasHabilitado() {
+        return numeroVagasHabilitado != null ? numeroVagasHabilitado : 0;
+    }
+
+    public void setNumeroVagasHabilitado(Integer numeroVagasHabilitado) {
+        this.numeroVagasHabilitado = numeroVagasHabilitado != null ? numeroVagasHabilitado : 0;
+    }
+
+    public Integer getVagasClassificadoOcupadas() {
+        return vagasClassificadoOcupadas != null ? vagasClassificadoOcupadas : 0;
+    }
+
+    public void setVagasClassificadoOcupadas(Integer vagasClassificadoOcupadas) {
+        this.vagasClassificadoOcupadas = vagasClassificadoOcupadas != null ? vagasClassificadoOcupadas : 0;
+    }
+
+    public Integer getVagasHabilitadoOcupadas() {
+        return vagasHabilitadoOcupadas != null ? vagasHabilitadoOcupadas : 0;
+    }
+
+    public void setVagasHabilitadoOcupadas(Integer vagasHabilitadoOcupadas) {
+        this.vagasHabilitadoOcupadas = vagasHabilitadoOcupadas != null ? vagasHabilitadoOcupadas : 0;
     }
 
     // MÉTODO getCandidatos() CORRIGIDO

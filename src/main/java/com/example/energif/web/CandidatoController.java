@@ -1,8 +1,8 @@
 package com.example.energif.web;
 
-import java.util.Map;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +21,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.energif.model.Campus;
 import com.example.energif.model.Candidato;
-import com.example.energif.model.TipoVaga;
 import com.example.energif.model.SituacaoCandidato;
+import com.example.energif.model.TipoVaga;
 import com.example.energif.repository.CampusRepository;
 import com.example.energif.repository.CandidatoRepository;
 import com.example.energif.util.Filtro;
@@ -288,8 +288,39 @@ public class CandidatoController {
 
             if ("CLASSIFICADO".equals(situacaoNormalized)) {
                 logger.info("Tentando classificar candidato {}", id);
-                resultado = candidatoService.habilitarCandidatoComFeedback(id, motivo);
-                logger.info("Resultado da classificação: {}", resultado);
+                Candidato cand = candidatoRepository.findById(id).orElse(null);
+                if (cand == null)
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não encontrado"));
+                
+                Campus campus = cand.getCampus();
+                if (campus == null)
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não possui campus definido"));
+                
+                // Validar se existe vaga de Classificado disponível
+                if (!campus.temVagaClassificadoDisponivel()) {
+                    int vagasDisponiveis = campus.getVagasClassificadoDisponiveis();
+                    resultado = Map.of(
+                            "sucesso", false,
+                            "mensagem", "Não há vagas de Classificado disponíveis no campus " + campus.getNome(),
+                            "campusNome", campus.getNome(),
+                            "vagasDisponiveis", vagasDisponiveis);
+                    return ResponseEntity.ok(resultado);
+                }
+
+                // Consumir uma vaga de Classificado
+                campus.setVagasClassificadoOcupadas(campus.getVagasClassificadoOcupadas() + 1);
+                campusRepository.save(campus);
+                
+                cand.setSituacao(SituacaoCandidato.CLASSIFICADO);
+                cand.setMotivoNaoClassificacao(null);
+                candidatoRepository.save(cand);
+                
+                int vagasRestantes = campus.getVagasClassificadoDisponiveis();
+                resultado = Map.of(
+                        "sucesso", true,
+                        "mensagem", "Candidato marcado como classificado com sucesso",
+                        "vagasDisponiveis", vagasRestantes,
+                        "campusNome", campus.getNome());
                 return ResponseEntity.ok(resultado);
 
             } else if ("ELIMINADO".equals(situacaoNormalized)) {
@@ -298,6 +329,11 @@ public class CandidatoController {
                 if (cand == null)
                     return ResponseEntity.badRequest()
                             .body(Map.of("sucesso", false, "mensagem", "Candidato não encontrado"));
+                // validate motivo: do not allow marking as ELIMINADO without motivo
+                if (motivo == null || motivo.isBlank()) {
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Selecione um motivo antes de marcar como eliminado"));
+                }
+
                 cand.setSituacao(SituacaoCandidato.ELIMINADO);
                 cand.setMotivoNaoClassificacao(motivo);
                 candidatoRepository.save(cand);
@@ -349,7 +385,39 @@ public class CandidatoController {
             } else if ("HABILITADO".equals(situacaoNormalized)) {
                 // mark as HABILITADO — com verificação de vagas
                 logger.info("Tentando marcar candidato {} como HABILITADO", id);
-                resultado = candidatoService.marcarComoHabilitado(id);
+                Candidato cand = candidatoRepository.findById(id).orElse(null);
+                if (cand == null)
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não encontrado"));
+                
+                Campus campus = cand.getCampus();
+                if (campus == null)
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não possui campus definido"));
+                
+                // Validar se existe vaga de Habilitado disponível
+                if (!campus.temVagaHabilitadoDisponivel()) {
+                    int vagasDisponiveis = campus.getVagasHabilitadoDisponiveis();
+                    resultado = Map.of(
+                            "sucesso", false,
+                            "mensagem", "Não há vagas de Habilitado disponíveis no campus " + campus.getNome(),
+                            "campusNome", campus.getNome(),
+                            "vagasDisponiveis", vagasDisponiveis);
+                    return ResponseEntity.ok(resultado);
+                }
+
+                // Consumir uma vaga de Habilitado
+                campus.setVagasHabilitadoOcupadas(campus.getVagasHabilitadoOcupadas() + 1);
+                campusRepository.save(campus);
+                
+                cand.setSituacao(SituacaoCandidato.HABILITADO);
+                cand.setMotivoNaoClassificacao(null);
+                candidatoRepository.save(cand);
+                
+                int vagasRestantes = campus.getVagasHabilitadoDisponiveis();
+                resultado = Map.of(
+                        "sucesso", true,
+                        "mensagem", "Candidato marcado como habilitado com sucesso",
+                        "vagasDisponiveis", vagasRestantes,
+                        "campusNome", campus.getNome());
                 return ResponseEntity.ok(resultado);
 
             } else if ("PENDENTE".equals(situacaoNormalized)) {
@@ -450,6 +518,71 @@ public class CandidatoController {
             return campusRepository.findById(cid).orElse(null);
         } catch (NumberFormatException nfe) {
             return campusRepository.findByNome(campusId);
+        }
+    }
+
+    // Generate PDF report for preliminary list of registered candidates
+    @GetMapping("/report-preliminar")
+    public void gerarRelatorioPreliminar(
+            @RequestParam(name = "order", required = false, defaultValue = "newest") String order,
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(name = "campusId", required = false) Long campusId,
+            @RequestParam(name = "genero", required = false) String genero,
+            @RequestParam(name = "idade", required = false) String idade,
+            @RequestParam(name = "situacao", required = false) String situacao,
+            @RequestParam(name = "turno", required = false) String turno,
+            jakarta.servlet.http.HttpServletResponse response) {
+        try {
+            // prepare filename
+            String filename = "relacao_preliminar_candidatos_inscritos.pdf";
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+
+            // Normalize filter params
+            String generoNorm = (genero != null && !genero.isBlank()) ? genero.trim().toUpperCase() : null;
+            Character generoChar = (generoNorm != null && !generoNorm.isEmpty()) ? generoNorm.charAt(0) : null;
+            String idadeNorm = (idade != null && !idade.isBlank()) ? idade.trim() : null;
+            String situacaoFilter = (situacao != null && !situacao.isBlank()) ? situacao.trim() : null;
+            String turnoNorm = (turno != null && !turno.isBlank()) ? turno.trim() : null;
+
+            // Build list of candidates
+            java.util.List<com.example.energif.model.Candidato> candidatos;
+            boolean usingFilters = (q != null && !q.isBlank()) || campusId != null || generoChar != null
+                    || (idadeNorm != null && !idadeNorm.isBlank()) || situacaoFilter != null || turnoNorm != null;
+
+            if (usingFilters) {
+                String qParam = (q != null && !q.isBlank()) ? q.trim().toLowerCase() : null;
+                org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 
+                        10000, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "nome"));
+                org.springframework.data.domain.Page<com.example.energif.model.Candidato> pageResult = 
+                        candidatoRepository.searchCombined(qParam, campusId, generoChar, idadeNorm, situacaoFilter, turnoNorm, pageable);
+                candidatos = pageResult.getContent();
+            } else {
+                candidatos = candidatoRepository.findAll(
+                        org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "nome"));
+            }
+
+            // Get edital description if there are candidatos
+            String editalDescricao = "PROEXC nº 06/2024";
+            if (!candidatos.isEmpty() && candidatos.get(0).getEdital() != null) {
+                editalDescricao = candidatos.get(0).getEdital().getDescricao();
+            }
+
+            // Build PDF
+            com.lowagie.text.Document doc = new com.lowagie.text.Document();
+            com.lowagie.text.pdf.PdfWriter.getInstance(doc, response.getOutputStream());
+            doc.open();
+
+            relatorioService.gerarRelatorioPreliminar(doc, candidatos, editalDescricao);
+
+            doc.close();
+
+        } catch (Exception e) {
+            logger.error("Erro ao gerar relatorio preliminar PDF", e);
+            try {
+                response.sendError(500, "Erro ao gerar relatorio: " + e.getMessage());
+            } catch (java.io.IOException ex) {
+            }
         }
     }
 

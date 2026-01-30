@@ -101,6 +101,8 @@ public class CampusController {
             existing.setNumeroVagasAmplaConcorrencia(campus.getNumeroVagasAmplaConcorrencia());
             existing.setNumeroVagasReservadas(campus.getNumeroVagasReservadas());
             existing.setNumeroVagasCadastroReserva(campus.getNumeroVagasCadastroReserva());
+            existing.setNumeroVagasClassificado(campus.getNumeroVagasClassificado());
+            existing.setNumeroVagasHabilitado(campus.getNumeroVagasHabilitado());
             campusRepository.save(existing);
             return "redirect:/campus/novo?updated";
         }
