@@ -23,7 +23,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.example.energif.model.Campus;
 import com.example.energif.model.CampusEdital;
@@ -67,12 +66,9 @@ public class Filtro {
         this.turnoRepository = turnoRepository;
     }
 
-    @Transactional
     public int importarXlsx(File xlsxFile) throws Exception {
         return importarXlsx(xlsxFile, null);
     }
-
-    @Transactional
     public int importarXlsx(File xlsxFile, String editalDescricao) throws Exception {
         com.example.energif.model.Edital targetEdital = null;
         if (editalDescricao != null && !editalDescricao.isBlank()) {
@@ -338,15 +334,10 @@ public class Filtro {
             }
         }
 
-        // NOVA LÓGICA: Determinar tipo de vaga automaticamente pelo gênero
-        TipoVaga tipoVaga;
-        if (genero != null && genero == 'F') {
-            tipoVaga = TipoVaga.RESERVADA; // Mulheres concorrem a vagas reservadas
-            log.debug("Linha {}: Candidata mulher -> Vaga RESERVADA", r.getRowNum());
-        } else {
-            tipoVaga = TipoVaga.AMPLA_CONCORRENCIA; // Homens concorrem a ampla concorrência
-            log.debug("Linha {}: Candidato homem -> Vaga AMPLA CONCORRÊNCIA", r.getRowNum());
-        }
+        // NOTA: TipoVaga será determinado automaticamente pela AlocacaoVagaService
+        // durante o processamento de alocação de vagas, com base na ordem de inscrição,
+        // situação (classificado/habilitado) e gênero do candidato.
+        // Durante o import, deixamos tipoVaga como null.
 
         // resolve or create campus
         Campus campus = null;
@@ -374,11 +365,11 @@ public class Filtro {
         c.setTurno(turno);
         c.setDataInscricao(dataInscricao);
         c.setHoraInscricao(horaInscricao);
-        c.setTipoVaga(tipoVaga); // Definido automaticamente pelo gênero
+        // TipoVaga será definido pela AlocacaoVagaService durante alocação de vagas
         c.setSituacao(SituacaoCandidato.PENDENTE); // Por padrão, candidato PENDENTE
 
-        log.debug("Candidato mapeado: {} - Gênero: {} - Campus: {} - Tipo Vaga: {}",
-                nome, genero, campusName, tipoVaga);
+        log.debug("Candidato mapeado: {} - Gênero: {} - Campus: {}",
+                nome, genero, campusName);
 
         return c;
     }

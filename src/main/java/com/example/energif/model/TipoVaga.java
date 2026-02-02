@@ -1,12 +1,15 @@
 package com.example.energif.model;
 
-
-
-
 public enum TipoVaga {
-    RESERVADA("Reservada para Mulheres"),
-    AMPLA_CONCORRENCIA("Ampla Concorrência"),
-    CADASTRO_RESERVA("Cadastro de Reserva (Suplente)");
+    CLASSIFICADO_MASCULINO("Classificado - Masculino"),
+    CLASSIFICADO_FEMININO("Classificado - Feminino"),
+    HABILITADO_MASCULINO("Habilitado - Masculino"),
+    HABILITADO_FEMININO("Habilitado - Feminino"),
+    RESERVADO("Reservado"),
+    // Legacy name: some rows in the database still store RESERVADA
+    RESERVADA("Reservada"),
+    // Legacy/older DB value for open competition
+    AMPLA_CONCORRENCIA("Ampla Concorrência");
     
     private final String descricao;
     
@@ -17,18 +20,36 @@ public enum TipoVaga {
     public String getDescricao() {
         return descricao;
     }
+
+    public boolean isClassificado() {
+        return this == CLASSIFICADO_MASCULINO || this == CLASSIFICADO_FEMININO || this == AMPLA_CONCORRENCIA;
+    }
+
+    public boolean isHabilitado() {
+        return this == HABILITADO_MASCULINO || this == HABILITADO_FEMININO;
+    }
+
+    public boolean isReservado() {
+        return this == RESERVADO || this == RESERVADA;
+    }
+
+    public boolean isMasculino() {
+        return this == CLASSIFICADO_MASCULINO || this == HABILITADO_MASCULINO;
+    }
+
+    public boolean isFeminino() {
+        return this == CLASSIFICADO_FEMININO || this == HABILITADO_FEMININO;
+    }
     
-    // Método para converter de string para enum
     public static TipoVaga fromString(String text) {
         if (text != null) {
             for (TipoVaga tipo : TipoVaga.values()) {
                 if (text.equalsIgnoreCase(tipo.name()) || 
-                    text.equalsIgnoreCase(tipo.descricao) ||
-                    text.toLowerCase().contains(tipo.name().toLowerCase().replace("_", " "))) {
+                    text.equalsIgnoreCase(tipo.descricao)) {
                     return tipo;
                 }
             }
         }
-        return AMPLA_CONCORRENCIA; // padrão
+        return RESERVADO;
     }
 }

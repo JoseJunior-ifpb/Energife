@@ -186,6 +186,25 @@ public class CandidatoController {
         } catch (Exception ex) {
             model.addAttribute("turnos", java.util.List.of());
         }
+        // Adicionar estatísticas de candidatos por situação
+        java.util.List<com.example.energif.model.Candidato> todosCandidatos = candidatoRepository.findAll();
+        long totalPendentes = todosCandidatos.stream()
+                .filter(c -> c.getSituacao() == SituacaoCandidato.PENDENTE).count();
+        long totalClassificados = todosCandidatos.stream()
+                .filter(c -> c.getSituacao() == SituacaoCandidato.CLASSIFICADO).count();
+        long totalHabilitados = todosCandidatos.stream()
+                .filter(c -> c.getSituacao() == SituacaoCandidato.HABILITADO).count();
+        long totalEliminados = todosCandidatos.stream()
+                .filter(c -> c.getSituacao() == SituacaoCandidato.ELIMINADO).count();
+        long totalCadastroReserva = todosCandidatos.stream()
+                .filter(c -> c.getSituacao() == SituacaoCandidato.CADASTRO_RESERVA).count();
+
+        model.addAttribute("totalPendentes", totalPendentes);
+        model.addAttribute("totalClassificados", totalClassificados);
+        model.addAttribute("totalHabilitados", totalHabilitados);
+        model.addAttribute("totalEliminados", totalEliminados);
+        model.addAttribute("totalCadastroReserva", totalCadastroReserva);
+
         model.addAttribute("candidatosPage", pageResult);
         model.addAttribute("candidatos", pageResult.getContent());
         model.addAttribute("currentPage", page);
@@ -246,6 +265,29 @@ public class CandidatoController {
         } catch (Exception e) {
             logger.error("Erro ao receber arquivo de importacao", e);
             return "redirect:/candidatos/list?import=error";
+        }
+    }
+
+    @PostMapping("/{id}/deletar")
+    @ResponseBody
+    public ResponseEntity<?> deletarCandidato(@PathVariable("id") Long id) {
+        logger.info("Exclusão de candidato iniciada: ID={}", id);
+        try {
+            Candidato candidato = candidatoRepository.findById(id).orElse(null);
+            if (candidato == null) {
+                return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não encontrado"));
+            }
+
+            String nomeCandidato = candidato.getNome();
+            String cpfCandidato = candidato.getCpf();
+
+            candidatoRepository.deleteById(id);
+            
+            logger.info("Candidato deletado com sucesso: ID={}, Nome={}, CPF={}", id, nomeCandidato, cpfCandidato);
+            return ResponseEntity.ok(Map.of("sucesso", true, "mensagem", "Candidato '" + nomeCandidato + "' foi deletado com sucesso"));
+        } catch (Exception ex) {
+            logger.error("Erro ao deletar candidato {}", id, ex);
+            return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Erro ao deletar candidato: " + ex.getMessage()));
         }
     }
 
@@ -372,8 +414,8 @@ public class CandidatoController {
                     return ResponseEntity.ok(resultado);
                 }
 
-                candidato.setTipoVaga(TipoVaga.CADASTRO_RESERVA);
-                candidato.setSituacao(SituacaoCandidato.CADASTRO_RESERVA);
+                candidato.setTipoVaga(TipoVaga.RESERVADO);
+                candidato.setSituacao(SituacaoCandidato.HABILITADO);
                 candidato.setMotivoNaoClassificacao(null);
                 candidatoRepository.save(candidato);
                 resultado = Map.of(

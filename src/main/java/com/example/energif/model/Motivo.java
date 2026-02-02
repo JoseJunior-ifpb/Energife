@@ -14,4 +14,13 @@ public class Motivo {
 
     @Column(nullable = false)
     private String descricao;
+
+    // Getter explícito para garantir acesso ao Thymeleaf
+    public String getDescricao() {
+        return this.descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
+    }
 }

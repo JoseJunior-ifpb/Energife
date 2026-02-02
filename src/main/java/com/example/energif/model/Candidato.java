@@ -17,7 +17,6 @@ import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-
 @Data
 @Entity
 @Table(name = "candidato")
@@ -80,8 +79,17 @@ public class Candidato {
         return this.id;
     }
 
+    
     public String getNome() {
         return this.nome;
+    }
+
+    public LocalDate getDataNascimento() {
+        return this.dataNascimento;
+    }
+
+    public String getCpf() {
+        return this.cpf;
     }
 
     public Edital getEdital() {
@@ -167,5 +175,6 @@ public class Candidato {
     public void setMotivoNaoClassificacao(String motivo) {
         this.motivoNaoClassificacao = motivo;
     }
+
 
 }

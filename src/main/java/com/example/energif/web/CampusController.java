@@ -68,11 +68,17 @@ public class CampusController {
                                 Map.entry("turno", t.getTurno()),
                                 Map.entry("numeroVagasReservadas", t.getNumeroVagasReservadas()),
                                 Map.entry("numeroVagasAmplaConcorrencia", t.getNumeroVagasAmplaConcorrencia()),
+                                Map.entry("numeroVagasClassificado", t.getNumeroVagasClassificado()),
+                                Map.entry("numeroVagasHabilitado", t.getNumeroVagasHabilitado()),
                                 Map.entry("numeroVagasCadastroReserva", t.getNumeroVagasCadastroReserva()),
                                 Map.entry("vagasReservadasOcupadas", t.getVagasReservadasOcupadas()),
                                 Map.entry("vagasAmplaOcupadas", t.getVagasAmplaOcupadas()),
+                                Map.entry("vagasClassificadoOcupadas", t.getVagasClassificadoOcupadas()),
+                                Map.entry("vagasHabilitadoOcupadas", t.getVagasHabilitadoOcupadas()),
                                 Map.entry("vagasReservadasDisponiveis", t.getVagasReservadasDisponiveis()),
                                 Map.entry("vagasAmplaDisponiveis", t.getVagasAmplaDisponiveis()),
+                                Map.entry("vagasClassificadoDisponiveis", t.getVagasClassificadoDisponiveis()),
+                                Map.entry("vagasHabilitadoDisponiveis", t.getVagasHabilitadoDisponiveis()),
                                 Map.entry("campusEditalTurnoId", t.getId()))))
                 .sorted((a, b) -> {
                     int cmpCampus = Objects.toString(a.get("campusNome"), "")
@@ -114,10 +120,12 @@ public class CampusController {
     // No CampusController - adicione estes métodos:
     @PostMapping("/{id}/editar-ajax")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> editarCampusAjax(@PathVariable("id") Long id,
+        public ResponseEntity<Map<String, Object>> editarCampusAjax(@PathVariable("id") Long id,
             @RequestParam Integer numeroVagasReservadas,
             @RequestParam Integer numeroVagasAmplaConcorrencia,
-            @RequestParam(required = false, defaultValue = "0") Integer numeroVagasCadastroReserva) {
+            @RequestParam(required = false, defaultValue = "0") Integer numeroVagasCadastroReserva,
+            @RequestParam(required = false, defaultValue = "0") Integer numeroVagasClassificado,
+            @RequestParam(required = false, defaultValue = "0") Integer numeroVagasHabilitado) {
         logger.info("Iniciando atualização do turno/campus ID: {}", id);
 
         try {
@@ -130,6 +138,8 @@ public class CampusController {
                 turno.setNumeroVagasReservadas(numeroVagasReservadas);
                 turno.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
                 turno.setNumeroVagasCadastroReserva(numeroVagasCadastroReserva);
+                turno.setNumeroVagasClassificado(numeroVagasClassificado);
+                turno.setNumeroVagasHabilitado(numeroVagasHabilitado);
                 CampusEditalTurno turnoSalvo = campusEditalTurnoRepository.save(turno);
 
                 Map<String, Object> campusData = new HashMap<>();
@@ -138,10 +148,16 @@ public class CampusController {
                 campusData.put("numeroVagasReservadas", turnoSalvo.getNumeroVagasReservadas());
                 campusData.put("numeroVagasAmplaConcorrencia", turnoSalvo.getNumeroVagasAmplaConcorrencia());
                 campusData.put("numeroVagasCadastroReserva", turnoSalvo.getNumeroVagasCadastroReserva());
+                campusData.put("numeroVagasClassificado", turnoSalvo.getNumeroVagasClassificado());
+                campusData.put("numeroVagasHabilitado", turnoSalvo.getNumeroVagasHabilitado());
                 campusData.put("vagasReservadasOcupadas", turnoSalvo.getVagasReservadasOcupadas());
                 campusData.put("vagasAmplaOcupadas", turnoSalvo.getVagasAmplaOcupadas());
+                campusData.put("vagasClassificadoOcupadas", turnoSalvo.getVagasClassificadoOcupadas());
+                campusData.put("vagasHabilitadoOcupadas", turnoSalvo.getVagasHabilitadoOcupadas());
                 campusData.put("vagasReservadasDisponiveis", turnoSalvo.getVagasReservadasDisponiveis());
                 campusData.put("vagasAmplaDisponiveis", turnoSalvo.getVagasAmplaDisponiveis());
+                campusData.put("vagasClassificadoDisponiveis", turnoSalvo.getVagasClassificadoDisponiveis());
+                campusData.put("vagasHabilitadoDisponiveis", turnoSalvo.getVagasHabilitadoDisponiveis());
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
@@ -158,6 +174,8 @@ public class CampusController {
                 campus.setNumeroVagasReservadas(numeroVagasReservadas);
                 campus.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia);
                 campus.setNumeroVagasCadastroReserva(numeroVagasCadastroReserva);
+                campus.setNumeroVagasClassificado(numeroVagasClassificado);
+                campus.setNumeroVagasHabilitado(numeroVagasHabilitado);
                 Campus campusSalvo = campusRepository.save(campus);
 
                 // Retornar os dados atualizados
@@ -167,10 +185,16 @@ public class CampusController {
                 campusData.put("numeroVagasReservadas", campusSalvo.getNumeroVagasReservadas());
                 campusData.put("numeroVagasAmplaConcorrencia", campusSalvo.getNumeroVagasAmplaConcorrencia());
                 campusData.put("numeroVagasCadastroReserva", campusSalvo.getNumeroVagasCadastroReserva());
+                campusData.put("numeroVagasClassificado", campusSalvo.getNumeroVagasClassificado());
+                campusData.put("numeroVagasHabilitado", campusSalvo.getNumeroVagasHabilitado());
                 campusData.put("vagasReservadasOcupadas", campusSalvo.getVagasReservadasOcupadas());
                 campusData.put("vagasAmplaOcupadas", campusSalvo.getVagasAmplaOcupadas());
+                campusData.put("vagasClassificadoOcupadas", campusSalvo.getVagasClassificadoOcupadas());
+                campusData.put("vagasHabilitadoOcupadas", campusSalvo.getVagasHabilitadoOcupadas());
                 campusData.put("vagasReservadasDisponiveis", campusSalvo.getVagasReservadasDisponiveis());
                 campusData.put("vagasAmplaDisponiveis", campusSalvo.getVagasAmplaDisponiveis());
+                campusData.put("vagasClassificadoDisponiveis", campusSalvo.getVagasClassificadoDisponiveis());
+                campusData.put("vagasHabilitadoDisponiveis", campusSalvo.getVagasHabilitadoDisponiveis());
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);

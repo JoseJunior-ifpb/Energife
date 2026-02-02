@@ -4,138 +4,7 @@
     <meta charset="UTF-8" />
     <title>Lista de Candidatos</title>
     <link rel="stylesheet" href="/css/styles.css" />
-    <style>
-        .alert {
-            border-radius: 8px;
-            padding: 16px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
-        
-        .alert-success {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        
-        .alert-warning {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-        }
-        
-        .alert-icon {
-            display: flex;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-        
-        .alert-success .alert-icon {
-            color: #28a745;
-        }
-        
-        .alert-warning .alert-icon {
-            color: #ffc107;
-        }
-        
-        .alert-icon svg {
-            width: 24px;
-            height: 24px;
-            stroke-width: 2;
-        }
-        
-        .alert-content {
-            flex: 1;
-        }
-        
-        .alert-title {
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 4px;
-        }
-        
-        .alert-message {
-            font-size: 14px;
-            line-height: 1.4;
-        }
-        
-        .alert-close {
-            flex-shrink: 0;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-        
-        .alert-success .alert-close {
-            color: #155724;
-        }
-        
-        .alert-warning .alert-close {
-            color: #856404;
-        }
-        
-        .alert-close:hover {
-            opacity: 1;
-        }
-        
-        .alert-close svg {
-            width: 20px;
-            height: 20px;
-            stroke-width: 2;
-        }
-        /* Tabela mais larga e rolável */
-        .table-wrap {
-            overflow-x: auto;
-        }
-
-        /* força largura mínima para mostrar todas as colunas em telas maiores */
-        table.styled {
-            width: 1200px;
-            table-layout: auto;
-        }
-
-        /* evitar quebra de conteúdo nas células e melhorar espaçamento */
-        table.styled th, table.styled td {
-            white-space: nowrap;
-            padding: 10px 12px;
-            vertical-align: middle;
-        }
-
-        /* Alinha e padroniza largura dos selects de situação/motivo */
-        .situacao-form select, .motivo-input select {
-            width: 220px;
-            max-width: 100%;
-            box-sizing: border-box;
-            vertical-align: middle;
-            padding: 6px 8px;
-            font-size: 0.95rem;
-        }
-
-        /* Alinha o botão salvar à direita do select */
-        .situacao-form button.btn-sm {
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-
-        /* Garante alinhamento da célula de motivo */
-        .motivo-input {
-            text-align: left;
-        }
-
-        /* Ajustes responsivos para telas pequenas */
-        @media (max-width: 900px) {
-            table.styled { width: 100%; }
-            .situacao-form select, .motivo-input select { width: 140px; }
-        }
-    </style>
+    
 </head>
 <body>
 <!-- Container para notificações no topo da tela -->
@@ -144,11 +13,52 @@
     <div class="hero">
         <div class="title">
             <h1>Lista de Candidatos</h1>
-            <div class="subtitle">Visualize e gerencie os candidatos cadastrados</div>
+            <div class="subtitle" style="display: flex; flex-direction: column; gap: 12px;">
+                <span>Visualize e gerencie os candidatos cadastrados</span>
+                
+                <!-- Dashboard de Estatísticas -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px;">
+                    <!-- Total Geral -->
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 16px; border-radius: 6px; text-align: center; font-weight: bold;">
+                        <div style="font-size: 24px;" th:text="${candidatosPage.totalElements}">0</div>
+                        <div style="font-size: 12px; margin-top: 4px;">Total Inscritos</div>
+                    </div>
+                    
+                    <!-- Pendentes -->
+                    <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 12px 16px; border-radius: 6px; text-align: center; font-weight: bold;">
+                        <div style="font-size: 24px;" th:text="${totalPendentes}">0</div>
+                        <div style="font-size: 12px; margin-top: 4px;">Pendentes</div>
+                    </div>
+                    
+                    <!-- Classificados -->
+                    <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 12px 16px; border-radius: 6px; text-align: center; font-weight: bold;">
+                        <div style="font-size: 24px;" th:text="${totalClassificados}">0</div>
+                        <div style="font-size: 12px; margin-top: 4px;">Classificados</div>
+                    </div>
+                    
+                    <!-- Habilitados -->
+                    <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 12px 16px; border-radius: 6px; text-align: center; font-weight: bold;">
+                        <div style="font-size: 24px;" th:text="${totalHabilitados}">0</div>
+                        <div style="font-size: 12px; margin-top: 4px;">Habilitados</div>
+                    </div>
+                    
+                    <!-- Eliminados -->
+                    <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 12px 16px; border-radius: 6px; text-align: center; font-weight: bold;">
+                        <div style="font-size: 24px;" th:text="${totalEliminados}">0</div>
+                        <div style="font-size: 12px; margin-top: 4px;">Eliminados</div>
+                    </div>
+                    
+                    <!-- Cadastro Reserva -->
+                    <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333; padding: 12px 16px; border-radius: 6px; text-align: center; font-weight: bold;">
+                        <div style="font-size: 24px;" th:text="${totalCadastroReserva}">0</div>
+                        <div style="font-size: 12px; margin-top: 4px;">Cadastro Reserva</div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="toolbar">
-            <a th:href="@{/candidatos/novo}" class="btn btn-primary">Novo Candidato</a>
-            <a th:href="@{/}" class="btn btn-ghost">Home</a>
+            <!--<a th:href="@{/candidatos/novo}" class="btn btn-primary">Novo Candidato</a> -->
+            <a th:href="@{/campus/list}" class="btn btn-primary">Ver todos os campus</a>
             <a th:href="@{/motivos/list}" class="btn btn-ghost">Motivos</a>
             <div style="margin-left:12px;display:flex;align-items:center;gap:8px">
                 <label class="muted" style="font-size:0.9rem">Ordenar por:</label>
@@ -191,7 +101,7 @@
                 </select>
                 <button type="submit" class="btn btn-ghost">Filtrar</button>
                 <button type="submit" class="btn btn-primary" formtarget="_blank" formaction="/candidatos/report">Gerar relatório</button>
-                <button type="submit" class="btn btn-info" formtarget="_blank" formaction="/candidatos/report-preliminar">Gerar relatório preliminar</button>
+                
             </form>
 
             <form th:action="@{/candidatos/list}" method="get" class="search-form" style="display:flex; align-items:center; gap:8px;">
@@ -229,6 +139,21 @@
                 <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja apagar todos os candidatos?');">Apagar todos</button>
             </form>
             <button id="btn-duplicados" class="btn btn-ghost" style="margin-left:12px">Candidatos repetidos</button>
+
+            <form th:action="@{/candidatos/report-preliminar}" method="get" style="margin-left:12px; display:flex; align-items:center;" target="_blank">
+
+                <input type="hidden" name="order" th:value="${selectedOrder}" />
+                <input type="hidden" name="q" th:value="${q}" />
+                <input type="hidden" name="campusId" th:value="${selectedCampus}" />
+                <input type="hidden" name="genero" th:value="${selectedGenero}" />
+                <input type="hidden" name="idade" th:value="${selectedIdade}" />
+                <input type="hidden" name="situacao" th:value="${selectedSituacao}" />
+                <input type="hidden" name="turno" th:value="${selectedTurno}" />
+                
+                <button type="submit" class="btn btn-info">
+                    Gerar relatório preliminar
+                </button>
+            </form>
         </div>
     </div>
 
@@ -247,6 +172,7 @@
                     <th>Inscrição</th>
                     <th>Situação</th>
                     <th>Motivo</th>
+                    <th>Ações</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -259,7 +185,7 @@
                     <td th:text="${cand.turno}">-</td>
                     <td th:text="${cand.genero}">-</td>
                     <td><div th:text="${cand.dataInscricao}">-</div><div class="muted" th:text="${cand.horaInscricao}">-</div></td>
-                    <td>
+                    <td style="min-width: 220px;">
                         <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post" class="situacao-form">
                             <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                             <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'ELIMINADO') ? 'table-cell' : 'none';">
@@ -287,9 +213,15 @@
                                 th:selected="${m.descricao == cand.motivoNaoClassificacao}"></option>
                         </select>
                     </td>
+                    <td style="text-align: center;">
+                        <button class="btn btn-danger btn-sm btn-deletar-candidato" 
+                                th:data-candidato-id="${cand.id}" 
+                                th:data-candidato-nome="${cand.nome}" 
+                                style="padding: 4px 8px; font-size: 0.85rem;">Deletar</button>
+                    </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(candidatos)}">
-                    <td colspan="11" class="text-center muted">Nenhum candidato encontrado.</td>
+                    <td colspan="12" class="text-center muted">Nenhum candidato encontrado.</td>
                 </tr>
                 </tbody>
             </table>
@@ -601,6 +533,139 @@ document.addEventListener('DOMContentLoaded', function() {
         closeDup.addEventListener('click', function() { modalDup.style.display = 'none'; });
         modalDup.addEventListener('click', function(ev) { if (ev.target === modalDup) modalDup.style.display = 'none'; });
     }
+
+    // Mostrar alerta de carregamento ao enviar o formulário de importação
+    (function() {
+        const importForm = document.querySelector('form[enctype="multipart/form-data"][action="/candidatos/import"], form[action="/candidatos/import"]');
+        if (!importForm) return;
+        importForm.addEventListener('submit', function(ev) {
+            try {
+                const notificationsContainer = document.getElementById('notifications-container');
+                if (notificationsContainer) {
+                    // evitar múltiplos alertas de importação
+                    if (notificationsContainer.querySelector('.alert.importing')) return;
+
+                    const alertEl = document.createElement('div');
+                    alertEl.className = 'alert alert-info loading importing';
+                    alertEl.style.minWidth = '380px';
+                    alertEl.style.boxShadow = '0 8px 24px rgba(0,0,0,0.25)';
+
+                    const icon = document.createElement('div');
+                    icon.className = 'alert-icon';
+
+                    const content = document.createElement('div');
+                    content.className = 'alert-content';
+                    const title = document.createElement('div');
+                    title.className = 'alert-title';
+                    title.textContent = 'Importando dados';
+                    const message = document.createElement('div');
+                    message.className = 'alert-message';
+                    message.textContent = 'Aguarde — importação em andamento...';
+
+                    content.appendChild(title);
+                    content.appendChild(message);
+                    alertEl.appendChild(icon);
+                    alertEl.appendChild(content);
+
+                    notificationsContainer.appendChild(alertEl);
+                }
+
+                // desabilita o botão para evitar envios duplicados
+                const submitBtn = importForm.querySelector('button[type="submit"], input[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    if (submitBtn.tagName.toLowerCase() === 'button') {
+                        submitBtn.dataset.__orig = submitBtn.innerHTML;
+                        submitBtn.innerHTML = 'Importando...';
+                    }
+                }
+            } catch (e) {
+                // don't block submission on error
+                console.error('Erro ao mostrar alerta de importação', e);
+            }
+        });
+    })();
+
+    // Event listener para botões de deletar candidato
+    document.addEventListener('click', async function(e) {
+        if (e.target && e.target.classList.contains('btn-deletar-candidato')) {
+            const candidatoId = e.target.getAttribute('data-candidato-id');
+            const candidatoNome = e.target.getAttribute('data-candidato-nome');
+            
+            if (!confirm(`Tem certeza que deseja deletar o candidato "${candidatoNome}"? Esta ação não pode ser desfeita.`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/candidatos/${candidatoId}/deletar`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                const data = await response.json();
+
+                const notificationsContainer = document.getElementById('notifications-container');
+                const alertEl = document.createElement('div');
+                alertEl.className = data.sucesso ? 'alert alert-success' : 'alert alert-warning';
+                alertEl.style.minWidth = '380px';
+                alertEl.style.boxShadow = '0 8px 24px rgba(0,0,0,0.25)';
+                alertEl.style.animation = 'slideIn 0.3s ease-out';
+
+                const content = document.createElement('div');
+                content.className = 'alert-content';
+                
+                const title = document.createElement('div');
+                title.className = 'alert-title';
+                title.textContent = data.sucesso ? 'Sucesso!' : 'Erro';
+                content.appendChild(title);
+                
+                const message = document.createElement('div');
+                message.className = 'alert-message';
+                message.textContent = data.mensagem;
+                content.appendChild(message);
+
+                const icon = document.createElement('div');
+                icon.className = 'alert-icon';
+                icon.innerHTML = data.sucesso 
+                    ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+                    : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'alert-close';
+                closeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
+                closeBtn.onclick = () => alertEl.remove();
+
+                alertEl.appendChild(icon);
+                alertEl.appendChild(content);
+                alertEl.appendChild(closeBtn);
+
+                if (notificationsContainer) {
+                    notificationsContainer.appendChild(alertEl);
+                }
+
+                // Se sucesso, remover a linha da tabela após 1 segundo
+                if (data.sucesso) {
+                    setTimeout(() => {
+                        location.reload(); // Recarregar a página para atualizar a lista
+                    }, 1500);
+                }
+
+                // Auto-remover notificação após 5 segundos
+                setTimeout(() => {
+                    alertEl.style.transition = 'opacity 0.6s, transform 0.6s';
+                    alertEl.style.opacity = '0';
+                    alertEl.style.transform = 'translateY(-10px)';
+                    setTimeout(() => alertEl.remove(), 700);
+                }, 5000);
+            } catch (error) {
+                console.error('Erro ao deletar candidato:', error);
+                alert('Erro ao deletar candidato: ' + error.message);
+            }
+        }
+    });
 });
 </script>
 </html>

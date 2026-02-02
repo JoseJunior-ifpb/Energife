@@ -476,7 +476,7 @@
             <div class="stat-label">Cadastro de Reserva Totais</div>
         </div>
         <div class="stat-card">
-            <div class="stat-number" id="totalGeral" th:text="${turnos.isEmpty() ? 0 : #aggregates.sum(turnos.![numeroVagasReservadas + numeroVagasAmplaConcorrencia + numeroVagasCadastroReserva])}">0</div>
+            <div class="stat-number" id="totalGeral" th:text="${turnos.isEmpty() ? 0 : #aggregates.sum(turnos.![numeroVagasReservadas + numeroVagasAmplaConcorrencia + numeroVagasClassificado + numeroVagasHabilitado + numeroVagasCadastroReserva])}">0</div>
             <div class="stat-label">Total de Vagas</div>
         </div>
     </div>
@@ -582,6 +582,24 @@
                                            required />
                                 </div>
                             <div class="input-group">
+                                <label class="input-label">Classificado</label>
+                                <input type="number"
+                                       th:id="'input-classificado-' + ${turno.campusEditalTurnoId}"
+                                       th:value="${turno.numeroVagasClassificado}"
+                                       class="number-input input-classificado"
+                                       min="0"
+                                       required />
+                            </div>
+                            <div class="input-group">
+                                <label class="input-label">Habilitado</label>
+                                <input type="number"
+                                       th:id="'input-habilitado-' + ${turno.campusEditalTurnoId}"
+                                       th:value="${turno.numeroVagasHabilitado}"
+                                       class="number-input input-habilitado"
+                                       min="0"
+                                       required />
+                            </div>
+                            <div class="input-group">
                                 <label class="input-label">Cadastro Reserva</label>
                                 <input type="number" 
                                        th:id="'input-cadastro-reserva-' + ${turno.campusEditalTurnoId}"
@@ -678,6 +696,8 @@ async function atualizarCampus(campusId) {
     
     const numeroVagasReservadas = parseInt(reservadasInput.value) || 0;
     const numeroVagasAmplaConcorrencia = parseInt(amplaInput.value) || 0;
+    const numeroVagasClassificado = (() => { const el = document.getElementById('input-classificado-' + campusId); return el ? (parseInt(el.value) || 0) : 0; })();
+    const numeroVagasHabilitado = (() => { const el = document.getElementById('input-habilitado-' + campusId); return el ? (parseInt(el.value) || 0) : 0; })();
     const numeroVagasCadastroReserva = parseInt(cadastroReservaInput.value) || 0;
     
     // Validação
@@ -686,7 +706,7 @@ async function atualizarCampus(campusId) {
         return;
     }
     
-    if (numeroVagasReservadas === 0 && numeroVagasAmplaConcorrencia === 0 && numeroVagasCadastroReserva === 0) {
+    if (numeroVagasReservadas === 0 && numeroVagasAmplaConcorrencia === 0 && numeroVagasClassificado === 0 && numeroVagasHabilitado === 0 && numeroVagasCadastroReserva === 0) {
         if (!confirm('Todos os tipos de vaga estão com 0 vagas. Tem certeza que deseja continuar?')) {
             return;
         }
@@ -702,6 +722,8 @@ async function atualizarCampus(campusId) {
         const formData = new URLSearchParams();
         formData.append('numeroVagasReservadas', numeroVagasReservadas);
         formData.append('numeroVagasAmplaConcorrencia', numeroVagasAmplaConcorrencia);
+        formData.append('numeroVagasClassificado', numeroVagasClassificado);
+        formData.append('numeroVagasHabilitado', numeroVagasHabilitado);
         formData.append('numeroVagasCadastroReserva', numeroVagasCadastroReserva);
         if (_csrf.parameterName && _csrf.token) {
             formData.append(_csrf.parameterName, _csrf.token);
@@ -779,14 +801,48 @@ function updateCampusRow(campusId, campusData) {
     document.getElementById('vagas-ampla-ocupadas-' + campusId).textContent = campusData.vagasAmplaOcupadas;
     document.getElementById('vagas-ampla-disponiveis-' + campusId).textContent = campusData.vagasAmplaDisponiveis;
     
-    // Atualizar vagas cadastro reserva
-    document.getElementById('vagas-cadastro-total-' + campusId).textContent = campusData.numeroVagasCadastroReserva;
+    // Atualizar vagas classificado/habilitado
+    const classificadoTotalEl = document.getElementById('vagas-classificado-total-' + campusId);
+    if (classificadoTotalEl && campusData.numeroVagasClassificado !== undefined) {
+        classificadoTotalEl.textContent = campusData.numeroVagasClassificado;
+    }
+    const classificadoOcupadasEl = document.getElementById('vagas-classificado-ocupadas-' + campusId);
+    if (classificadoOcupadasEl && campusData.vagasClassificadoOcupadas !== undefined) {
+        classificadoOcupadasEl.textContent = campusData.vagasClassificadoOcupadas;
+    }
+    const classificadoDispEl = document.getElementById('vagas-classificado-disponiveis-' + campusId);
+    if (classificadoDispEl && campusData.vagasClassificadoDisponiveis !== undefined) {
+        classificadoDispEl.textContent = campusData.vagasClassificadoDisponiveis;
+    }
+
+    const habilitadoTotalEl = document.getElementById('vagas-habilitado-total-' + campusId);
+    if (habilitadoTotalEl && campusData.numeroVagasHabilitado !== undefined) {
+        habilitadoTotalEl.textContent = campusData.numeroVagasHabilitado;
+    }
+    const habilitadoOcupEl = document.getElementById('vagas-habilitado-ocupadas-' + campusId);
+    if (habilitadoOcupEl && campusData.vagasHabilitadoOcupadas !== undefined) {
+        habilitadoOcupEl.textContent = campusData.vagasHabilitadoOcupadas;
+    }
+    const habilitadoDispEl = document.getElementById('vagas-habilitado-disponiveis-' + campusId);
+    if (habilitadoDispEl && campusData.vagasHabilitadoDisponiveis !== undefined) {
+        habilitadoDispEl.textContent = campusData.vagasHabilitadoDisponiveis;
+    }
+
+    // Atualizar vagas cadastro reserva (se existir)
+    const vagasCadastroTotal = document.getElementById('vagas-cadastro-total-' + campusId);
+    if (vagasCadastroTotal && campusData.numeroVagasCadastroReserva !== undefined) {
+        vagasCadastroTotal.textContent = campusData.numeroVagasCadastroReserva;
+    }
     
     // Atualizar totais
-    document.getElementById('total-vagas-' + campusId).textContent = 
-        campusData.numeroVagasReservadas + campusData.numeroVagasAmplaConcorrencia + campusData.numeroVagasCadastroReserva;
-    document.getElementById('total-ocupadas-' + campusId).textContent = 
-        campusData.vagasReservadasOcupadas + campusData.vagasAmplaOcupadas;
+    const totalVagasEl = document.getElementById('total-vagas-' + campusId);
+    if (totalVagasEl) {
+        totalVagasEl.textContent = (campusData.numeroVagasReservadas || 0) + (campusData.numeroVagasAmplaConcorrencia || 0) + (campusData.numeroVagasClassificado || 0) + (campusData.numeroVagasHabilitado || 0) + (campusData.numeroVagasCadastroReserva || 0);
+    }
+    const totalOcupadasEl = document.getElementById('total-ocupadas-' + campusId);
+    if (totalOcupadasEl) {
+        totalOcupadasEl.textContent = (campusData.vagasReservadasOcupadas || 0) + (campusData.vagasAmplaOcupadas || 0) + (campusData.vagasClassificadoOcupadas || 0) + (campusData.vagasHabilitadoOcupadas || 0);
+    }
     
     // Atualizar status
     const statusElement = document.getElementById('status-' + campusId);
@@ -878,6 +934,8 @@ function updateEstatisticas() {
     let totalReservadas = 0;
     let totalAmpla = 0;
     let totalCadastroReserva = 0;
+    let totalClassificado = 0;
+    let totalHabilitado = 0;
     
     const rows = document.querySelectorAll('.campus-row');
     
@@ -885,14 +943,18 @@ function updateEstatisticas() {
         const campusId = row.id.split('-').pop();
         const vagasReservadasTotal = parseInt(document.getElementById('vagas-reservadas-total-' + campusId).textContent) || 0;
         const vagasAmplaTotal = parseInt(document.getElementById('vagas-ampla-total-' + campusId).textContent) || 0;
-        const vagasCadastroReservaTotal = parseInt(document.getElementById('vagas-cadastro-total-' + campusId).textContent) || 0;
+        const vagasCadastroReservaTotal = (document.getElementById('vagas-cadastro-total-' + campusId) ? parseInt(document.getElementById('vagas-cadastro-total-' + campusId).textContent) || 0 : 0);
+        const vagasClassificadoTotal = (document.getElementById('vagas-classificado-total-' + campusId) ? parseInt(document.getElementById('vagas-classificado-total-' + campusId).textContent) || 0 : 0);
+        const vagasHabilitadoTotal = (document.getElementById('vagas-habilitado-total-' + campusId) ? parseInt(document.getElementById('vagas-habilitado-total-' + campusId).textContent) || 0 : 0);
         
         totalReservadas += vagasReservadasTotal;
         totalAmpla += vagasAmplaTotal;
         totalCadastroReserva += vagasCadastroReservaTotal;
+        totalClassificado += vagasClassificadoTotal;
+        totalHabilitado += vagasHabilitadoTotal;
     });
 
-    const totalGeral = totalReservadas + totalAmpla + totalCadastroReserva;
+    const totalGeral = totalReservadas + totalAmpla + totalClassificado + totalHabilitado + totalCadastroReserva;
     const totalCampus = rows.length;
 
     // Atualiza os cartões de estatísticas
