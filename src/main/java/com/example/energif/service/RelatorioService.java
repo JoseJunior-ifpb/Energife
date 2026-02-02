@@ -43,7 +43,7 @@ public class RelatorioService {
 
         String turnoLine = (turno != null && !turno.isBlank()) ? turno : "";
         DateTimeFormatter dateF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        DateTimeFormatter timeF = DateTimeFormatter.ofPattern("HH:mm:ss");
+        DateTimeFormatter timeF = DateTimeFormatter.ofPattern("HH:mm");
 
         for (Campus campus : campusList) {
             List<Candidato> candidatos = grouped.get(campus);
@@ -184,7 +184,7 @@ public class RelatorioService {
         doc.add(titleTable);
         doc.add(Chunk.NEWLINE);
 
-        DateTimeFormatter dateTimeF = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+        DateTimeFormatter dateTimeF = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
         // Ordenar candidatos alfabeticamente por nome (ignorando acentos)
         java.text.Collator collator = java.text.Collator.getInstance(new java.util.Locale("pt", "BR"));
