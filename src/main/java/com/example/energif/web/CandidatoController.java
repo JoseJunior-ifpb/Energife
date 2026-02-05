@@ -21,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.energif.model.Campus;
 import com.example.energif.model.Candidato;
+import com.example.energif.model.Edital;
 import com.example.energif.model.SituacaoCandidato;
 import com.example.energif.model.TipoVaga;
 import com.example.energif.repository.CampusRepository;
@@ -38,19 +39,23 @@ public class CandidatoController {
     private final CandidatoRepository candidatoRepository;
     private final CampusRepository campusRepository;
     private final com.example.energif.repository.CampusEditalRepository campusEditalRepository;
+    private final com.example.energif.repository.CampusEditalTurnoRepository campusEditalTurnoRepository;
     private final Filtro filtro;
     private final com.example.energif.service.CandidatoService candidatoService;
     private final com.example.energif.repository.MotivoRepository motivoRepository;
     private final com.example.energif.service.RelatorioService relatorioService;
 
     public CandidatoController(CandidatoRepository candidatoRepository, CampusRepository campusRepository,
-            com.example.energif.repository.CampusEditalRepository campusEditalRepository, Filtro filtro,
+            com.example.energif.repository.CampusEditalRepository campusEditalRepository,
+            com.example.energif.repository.CampusEditalTurnoRepository campusEditalTurnoRepository,
+            Filtro filtro,
             com.example.energif.service.CandidatoService candidatoService,
             com.example.energif.repository.MotivoRepository motivoRepository,
             com.example.energif.service.RelatorioService relatorioService) {
         this.candidatoRepository = candidatoRepository;
         this.campusRepository = campusRepository;
         this.campusEditalRepository = campusEditalRepository;
+        this.campusEditalTurnoRepository = campusEditalTurnoRepository;
         this.filtro = filtro;
         this.candidatoService = candidatoService;
         this.motivoRepository = motivoRepository;
@@ -334,35 +339,81 @@ public class CandidatoController {
                 if (cand == null)
                     return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não encontrado"));
                 
+                // VERIFICAÇÃO: Se já foi classificado, retornar erro
+                if (cand.getSituacao() == SituacaoCandidato.CLASSIFICADO) {
+                    logger.warn("Tentativa de reclassificar candidato {} que já está classificado", id);
+                    return ResponseEntity.ok(Map.of(
+                            "sucesso", false,
+                            "mensagem", "Candidato já foi classificado anteriormente. Não é possível reclassificar.",
+                            "campusNome", cand.getCampus() != null ? cand.getCampus().getNome() : "N/A",
+                            "turno", cand.getTurno() != null ? cand.getTurno() : "N/A"));
+                }
+                
+                // VERIFICAÇÃO: Se já foi habilitado, retornar erro
+                if (cand.getSituacao() == SituacaoCandidato.HABILITADO) {
+                    logger.warn("Tentativa de classificar candidato {} que já está habilitado", id);
+                    return ResponseEntity.ok(Map.of(
+                            "sucesso", false,
+                            "mensagem", "Candidato já foi habilitado. Não é possível reclassificar.",
+                            "campusNome", cand.getCampus() != null ? cand.getCampus().getNome() : "N/A",
+                            "turno", cand.getTurno() != null ? cand.getTurno() : "N/A"));
+                }
+                
                 Campus campus = cand.getCampus();
                 if (campus == null)
                     return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não possui campus definido"));
                 
+                // Buscar vagas no CampusEditalTurno (novo sistema)
+                Edital edital = cand.getEdital();
+                if (edital == null) {
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não possui edital definido"));
+                }
+                
+                com.example.energif.model.CampusEdital campusEdital = campusEditalRepository.findByCampusAndEdital(campus, edital);
+                if (campusEdital == null) {
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "CampusEdital não encontrado para este candidato"));
+                }
+                
+                // Buscar CampusEditalTurno pelo turno do candidato
+                String turno = cand.getTurno() != null ? cand.getTurno() : "UNICO";
+                com.example.energif.model.CampusEditalTurno turnoVagas = campusEditalTurnoRepository.findByCampusEditalAndTurno(campusEdital, turno);
+                
+                if (turnoVagas == null) {
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Nenhuma vaga configurada para o turno '" + turno + "'"));
+                }
+                
                 // Validar se existe vaga de Classificado disponível
-                if (!campus.temVagaClassificadoDisponivel()) {
-                    int vagasDisponiveis = campus.getVagasClassificadoDisponiveis();
+                int vagasDisponiveisClassificado = turnoVagas.getVagasClassificadoDisponiveis();
+                if (vagasDisponiveisClassificado <= 0) {
                     resultado = Map.of(
                             "sucesso", false,
-                            "mensagem", "Não há vagas de Classificado disponíveis no campus " + campus.getNome(),
+                            "mensagem", "Não há vagas de Classificado disponíveis no campus " + campus.getNome() + " para o turno " + turno,
                             "campusNome", campus.getNome(),
-                            "vagasDisponiveis", vagasDisponiveis);
+                            "turno", turno,
+                            "vagasDisponiveis", vagasDisponiveisClassificado);
                     return ResponseEntity.ok(resultado);
                 }
 
-                // Consumir uma vaga de Classificado
-                campus.setVagasClassificadoOcupadas(campus.getVagasClassificadoOcupadas() + 1);
-                campusRepository.save(campus);
+                // Consumir uma vaga de Classificado (baseado no gênero do candidato)
+                Character genero = cand.getGenero();
+                if (com.example.energif.model.Genero.FEMININO.getCodigo().equals(genero)) {
+                    turnoVagas.setVagasClassificadoFemininoOcupadas(turnoVagas.getVagasClassificadoFemininoOcupadas() + 1);
+                } else {
+                    turnoVagas.setVagasClassificadoMasculinoOcupadas(turnoVagas.getVagasClassificadoMasculinoOcupadas() + 1);
+                }
+                campusEditalTurnoRepository.save(turnoVagas);
                 
                 cand.setSituacao(SituacaoCandidato.CLASSIFICADO);
                 cand.setMotivoNaoClassificacao(null);
                 candidatoRepository.save(cand);
                 
-                int vagasRestantes = campus.getVagasClassificadoDisponiveis();
+                int vagasRestantes = turnoVagas.getVagasClassificadoDisponiveis();
                 resultado = Map.of(
                         "sucesso", true,
                         "mensagem", "Candidato marcado como classificado com sucesso",
                         "vagasDisponiveis", vagasRestantes,
-                        "campusNome", campus.getNome());
+                        "campusNome", campus.getNome(),
+                        "turno", turno);
                 return ResponseEntity.ok(resultado);
 
             } else if ("ELIMINADO".equals(situacaoNormalized)) {
@@ -431,36 +482,73 @@ public class CandidatoController {
                 if (cand == null)
                     return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não encontrado"));
                 
+                // VERIFICAÇÃO: Se já foi habilitado, retornar erro
+                if (cand.getSituacao() == SituacaoCandidato.HABILITADO) {
+                    logger.warn("Tentativa de reabilitar candidato {} que já está habilitado", id);
+                    return ResponseEntity.ok(Map.of(
+                            "sucesso", false,
+                            "mensagem", "Candidato já foi habilitado anteriormente. Não é possível reabilitar.",
+                            "campusNome", cand.getCampus() != null ? cand.getCampus().getNome() : "N/A",
+                            "turno", cand.getTurno() != null ? cand.getTurno() : "N/A"));
+                }
+                
                 Campus campus = cand.getCampus();
                 if (campus == null)
                     return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não possui campus definido"));
                 
+                // Buscar vagas no CampusEditalTurno (novo sistema)
+                Edital edital = cand.getEdital();
+                if (edital == null) {
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Candidato não possui edital definido"));
+                }
+                
+                com.example.energif.model.CampusEdital campusEdital = campusEditalRepository.findByCampusAndEdital(campus, edital);
+                if (campusEdital == null) {
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "CampusEdital não encontrado para este candidato"));
+                }
+                
+                // Buscar CampusEditalTurno pelo turno do candidato
+                String turno = cand.getTurno() != null ? cand.getTurno() : "UNICO";
+                com.example.energif.model.CampusEditalTurno turnoVagas = campusEditalTurnoRepository.findByCampusEditalAndTurno(campusEdital, turno);
+                
+                if (turnoVagas == null) {
+                    return ResponseEntity.ok(Map.of("sucesso", false, "mensagem", "Nenhuma vaga configurada para o turno '" + turno + "'"));
+                }
+                
                 // Validar se existe vaga de Habilitado disponível
-                if (!campus.temVagaHabilitadoDisponivel()) {
-                    int vagasDisponiveis = campus.getVagasHabilitadoDisponiveis();
+                int vagasDisponiveisHabilitado = turnoVagas.getVagasHabilitadoDisponiveis();
+                if (vagasDisponiveisHabilitado <= 0) {
                     resultado = Map.of(
                             "sucesso", false,
-                            "mensagem", "Não há vagas de Habilitado disponíveis no campus " + campus.getNome(),
+                            "mensagem", "Não há vagas de Habilitado disponíveis no campus " + campus.getNome() + " para o turno " + turno,
                             "campusNome", campus.getNome(),
-                            "vagasDisponiveis", vagasDisponiveis);
+                            "turno", turno,
+                            "vagasDisponiveis", vagasDisponiveisHabilitado);
                     return ResponseEntity.ok(resultado);
                 }
 
-                // Consumir uma vaga de Habilitado
-                campus.setVagasHabilitadoOcupadas(campus.getVagasHabilitadoOcupadas() + 1);
-                campusRepository.save(campus);
+                // Consumir uma vaga de Habilitado (baseado no gênero do candidato)
+                Character genero = cand.getGenero();
+                if (com.example.energif.model.Genero.FEMININO.getCodigo().equals(genero)) {
+                    turnoVagas.setVagasHabilitadoFemininoOcupadas(turnoVagas.getVagasHabilitadoFemininoOcupadas() + 1);
+                } else {
+                    turnoVagas.setVagasHabilitadoMasculinoOcupadas(turnoVagas.getVagasHabilitadoMasculinoOcupadas() + 1);
+                }
+                campusEditalTurnoRepository.save(turnoVagas);
                 
                 cand.setSituacao(SituacaoCandidato.HABILITADO);
                 cand.setMotivoNaoClassificacao(null);
                 candidatoRepository.save(cand);
                 
-                int vagasRestantes = campus.getVagasHabilitadoDisponiveis();
+                int vagasRestantes = turnoVagas.getVagasHabilitadoDisponiveis();
                 resultado = Map.of(
                         "sucesso", true,
                         "mensagem", "Candidato marcado como habilitado com sucesso",
                         "vagasDisponiveis", vagasRestantes,
-                        "campusNome", campus.getNome());
+                        "campusNome", campus.getNome(),
+                        "turno", turno);
                 return ResponseEntity.ok(resultado);
+
 
             } else if ("PENDENTE".equals(situacaoNormalized)) {
                 // mark as PENDENTE

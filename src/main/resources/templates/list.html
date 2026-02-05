@@ -205,8 +205,10 @@
                             <button type="submit" class="btn btn-sm">Salvar</button>
                         </form>
                     </td>
-                    <td class="motivo-input" th:style="${cand.situacao == null or cand.situacao.name() == 'NAO_CLASSIFICADO' or cand.situacao.name() == 'ELIMINADO'} ? 'display:table-cell' : 'display:none'">
-                        <select name="motivo">
+<td class="motivo-input" 
+    th:style="${cand.situacao == null or cand.situacao.name() == 'NAO_CLASSIFICADO' or cand.situacao.name() == 'ELIMINADO'} 
+              ? 'display:table-cell; padding: 0 15px;' 
+              : 'display:none;'">                        <select name="motivo">
                             <option value="" th:selected="${cand.motivoNaoClassificacao == null || cand.motivoNaoClassificacao == ''}">Selecione um motivo</option>
                             <option th:each="m : ${motivos}" th:value="${m.descricao}"
                                 th:text="${m.descricao}"

@@ -69,6 +69,10 @@ public class CampusEditalTurnoController {
                              @RequestParam String turno,
                              @RequestParam Integer numeroVagasReservadas,
                              @RequestParam Integer numeroVagasAmplaConcorrencia,
+                             @RequestParam(required = false) Integer numeroVagasClassificadoMasculino,
+                             @RequestParam(required = false) Integer numeroVagasClassificadoFeminino,
+                             @RequestParam(required = false) Integer numeroVagasHabilitadoMasculino,
+                             @RequestParam(required = false) Integer numeroVagasHabilitadoFeminino,
                              Model model,
                              HttpServletRequest request) {
         
@@ -88,6 +92,10 @@ public class CampusEditalTurnoController {
             cet.setTurno(turno);
             cet.setNumeroVagasReservadas(numeroVagasReservadas != null ? numeroVagasReservadas : 0);
             cet.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia != null ? numeroVagasAmplaConcorrencia : 0);
+            cet.setNumeroVagasClassificadoMasculino(numeroVagasClassificadoMasculino != null ? numeroVagasClassificadoMasculino : 0);
+            cet.setNumeroVagasClassificadoFeminino(numeroVagasClassificadoFeminino != null ? numeroVagasClassificadoFeminino : 0);
+            cet.setNumeroVagasHabilitadoMasculino(numeroVagasHabilitadoMasculino != null ? numeroVagasHabilitadoMasculino : 0);
+            cet.setNumeroVagasHabilitadoFeminino(numeroVagasHabilitadoFeminino != null ? numeroVagasHabilitadoFeminino : 0);
             cet.setVagasReservadasOcupadas(0);
             cet.setVagasAmplaOcupadas(0);
             turnoRepository.save(cet);
@@ -104,6 +112,10 @@ public class CampusEditalTurnoController {
     public String updateTurno(@PathVariable Long turnoId,
                              @RequestParam Integer numeroVagasReservadas,
                              @RequestParam Integer numeroVagasAmplaConcorrencia,
+                             @RequestParam(required = false) Integer numeroVagasClassificadoMasculino,
+                             @RequestParam(required = false) Integer numeroVagasClassificadoFeminino,
+                             @RequestParam(required = false) Integer numeroVagasHabilitadoMasculino,
+                             @RequestParam(required = false) Integer numeroVagasHabilitadoFeminino,
                              Model model,
                              HttpServletRequest request) {
         
@@ -113,6 +125,10 @@ public class CampusEditalTurnoController {
 
             turno.setNumeroVagasReservadas(numeroVagasReservadas != null ? numeroVagasReservadas : 0);
             turno.setNumeroVagasAmplaConcorrencia(numeroVagasAmplaConcorrencia != null ? numeroVagasAmplaConcorrencia : 0);
+            turno.setNumeroVagasClassificadoMasculino(numeroVagasClassificadoMasculino != null ? numeroVagasClassificadoMasculino : 0);
+            turno.setNumeroVagasClassificadoFeminino(numeroVagasClassificadoFeminino != null ? numeroVagasClassificadoFeminino : 0);
+            turno.setNumeroVagasHabilitadoMasculino(numeroVagasHabilitadoMasculino != null ? numeroVagasHabilitadoMasculino : 0);
+            turno.setNumeroVagasHabilitadoFeminino(numeroVagasHabilitadoFeminino != null ? numeroVagasHabilitadoFeminino : 0);
             turnoRepository.save(turno);
 
             model.addAttribute("message", "Turno atualizado com sucesso");

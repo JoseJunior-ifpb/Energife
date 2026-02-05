@@ -29,7 +29,6 @@ import com.example.energif.model.CampusEdital;
 import com.example.energif.model.CampusEditalTurno;
 import com.example.energif.model.Candidato;
 import com.example.energif.model.SituacaoCandidato;
-import com.example.energif.model.TipoVaga;
 import com.example.energif.repository.CampusEditalRepository;
 import com.example.energif.repository.CampusEditalTurnoRepository;
 import com.example.energif.repository.CampusRepository;
@@ -114,12 +113,9 @@ public class Filtro {
                             c.setEdital(targetEdital);
                         candidatoRepository.save(c);
 
-                        // Se importamos dentro de um edital, garanta os turnos padrão
-                        // (Manhã/Tarde/Noite)
+                        // Se importamos dentro de um edital, garanta apenas o turno
+                        // exatamente como está no arquivo
                         if (c.getCampus() != null && c.getEdital() != null) {
-                            criarTurnosPadraoSeNaoExistir(c.getCampus(), c.getEdital());
-                            // também garanta o turno específico da linha (caso seja diferente da lista
-                            // padrão)
                             if (c.getTurno() != null && !c.getTurno().isBlank()) {
                                 criarTurnoSeNaoExistir(c.getCampus(), c.getEdital(), c.getTurno());
                             }
@@ -168,15 +164,68 @@ public class Filtro {
             // REMOVIDO: busca por "tipo_vaga" pois agora é determinado pelo gênero
         }
 
+        // Busca aproximada (fallback) para colunas que não foram encontradas exatamente
+        System.out.println("=== BUSCA APROXIMADA (FALLBACK) ===");
+        for (Cell cell : header) {
+            String txt = safeString(cell).toLowerCase();
+            
+            // Fallback para Campus e Turno separados
+            if (!map.containsKey("campus") && (txt.contains("campus") || txt.contains("cidade"))) {
+                map.put("campus", cell.getColumnIndex());
+                System.out.println(">>> CAMPUS (aproximado) encontrado na coluna: " + cell.getColumnIndex());
+            }
+            if (!map.containsKey("turno") && txt.contains("turno")) {
+                map.put("turno", cell.getColumnIndex());
+                System.out.println(">>> TURNO (aproximado) encontrado na coluna: " + cell.getColumnIndex());
+            }
+            
+            // Fallback para Timestamp
+            if (!map.containsKey("timestamp") && (txt.contains("timestamp") || txt.contains("data/hora") || txt.contains("carimbo"))) {
+                map.put("timestamp", cell.getColumnIndex());
+                System.out.println(">>> TIMESTAMP (aproximado) encontrado na coluna: " + cell.getColumnIndex());
+            }
+            
+            // Fallback para Nome
+            if (!map.containsKey("nome") && (txt.contains("nome") || txt.contains("candidat"))) {
+                map.put("nome", cell.getColumnIndex());
+                System.out.println(">>> NOME (aproximado) encontrado na coluna: " + cell.getColumnIndex());
+            }
+            
+            // Fallback para Gênero
+            if (!map.containsKey("genero") && (txt.contains("genero") || txt.contains("gênero") || txt.contains("sexo"))) {
+                map.put("genero", cell.getColumnIndex());
+                System.out.println(">>> GÊNERO (aproximado) encontrado na coluna: " + cell.getColumnIndex());
+            }
+            
+            // Fallback para Data de Nascimento
+            if (!map.containsKey("dataNascimento") && (txt.contains("nascimento") || txt.contains("nasc") || txt.contains("data_nasc"))) {
+                map.put("dataNascimento", cell.getColumnIndex());
+                System.out.println(">>> DATA DE NASCIMENTO (aproximado) encontrada na coluna: " + cell.getColumnIndex());
+            }
+            
+            // Fallback para CPF
+            if (!map.containsKey("cpf") && txt.contains("cpf")) {
+                map.put("cpf", cell.getColumnIndex());
+                System.out.println(">>> CPF (aproximado) encontrado na coluna: " + cell.getColumnIndex());
+            }
+        }
+
         // Verificação se todas as colunas obrigatórias foram encontradas
         System.out.println("=== VERIFICAÇÃO DE COLUNAS OBRIGATÓRIAS ===");
-        String[] obrigatorias = { "timestamp", "campus_turno", "nome", "genero", "dataNascimento", "cpf" };
+        String[] obrigatorias = { "timestamp", "nome", "genero", "dataNascimento", "cpf" };
         for (String col : obrigatorias) {
             if (!map.containsKey(col)) {
                 System.out.println("!!! ERRO: Coluna obrigatória não encontrada: " + col);
             } else {
                 System.out.println("✓ Coluna " + col + " encontrada na posição: " + map.get(col));
             }
+        }
+
+        // Campus é obrigatório (seja como campus_turno ou separado)
+        if (!map.containsKey("campus_turno") && !map.containsKey("campus")) {
+            System.out.println("!!! ERRO: Nenhuma coluna de CAMPUS encontrada (campus_turno ou campus)");
+        } else {
+            System.out.println("✓ Campus encontrado (campus_turno ou campus)");
         }
 
         System.out.println("Map final: " + map);
@@ -186,63 +235,18 @@ public class Filtro {
     }
 
     /**
-     * Normalize a raw turno string into one of the canonical values: "Manhã",
-     * "Tarde", "Noite".
-     * If the input doesn't match known patterns, return null.
+     * Preserva o turno exatamente como está no arquivo.
      */
     private String normalizeTurno(String raw) {
-        if (raw == null)
-            return null;
-        String s = raw.trim();
-        if (s.isEmpty())
-            return null;
-        
-        try {
-            // Remove accents to ease matching
-            String ascii = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
-                    .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-            String lower = ascii.toLowerCase();
-            
-            log.debug("Normalizando turno bruto '{}' -> '{}'", raw, lower);
-            
-            // Verifica em QUALQUER PARTE da string (mais tolerante)
-            if (lower.contains("manha")) {
-                log.debug("Turno '{}' contém 'manha' -> Manhã", raw);
-                return "Manhã";
-            }
-            if (lower.contains("tarde")) {
-                log.debug("Turno '{}' contém 'tarde' -> Tarde", raw);
-                return "Tarde";
-            }
-            if (lower.contains("noite")) {
-                log.debug("Turno '{}' contém 'noite' -> Noite", raw);
-                return "Noite";
-            }
-            
-            // Se não encontrou em nenhuma parte, tenta primeira letra ISOLADA
-            if (s.length() == 1) {
-                char c = lower.charAt(0);
-                if (c == 'm') {
-                    log.debug("Turno '{}' é letra 'M' isolada -> Manhã", raw);
-                    return "Manhã";
-                }
-                if (c == 't') {
-                    log.debug("Turno '{}' é letra 'T' isolada -> Tarde", raw);
-                    return "Tarde";
-                }
-                if (c == 'n') {
-                    log.debug("Turno '{}' é letra 'N' isolada -> Noite", raw);
-                    return "Noite";
-                }
-            }
-            
-            log.debug("Turno '{}' não reconhecido, retornando null", raw);
-            return null;
-            
-        } catch (Exception e) {
-            log.warn("Erro ao normalizar turno '{}': {}", raw, e.getMessage());
+        if (raw == null) {
             return null;
         }
+        String s = raw.trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+        log.debug("Turno preservado do arquivo: '{}'", s);
+        return s;
     }
 
     private Candidato mapRowToCandidato(Row r, Map<String, Integer> cols) {
@@ -300,19 +304,26 @@ public class Filtro {
         // campus and turno may be in the same column
         String campusName = null;
         String turno = null;
+        
         if (cols.containsKey("campus_turno")) {
             String v = getCellString(r, cols.get("campus_turno"));
             log.debug("Row {}: Valor bruto campus_turno: '{}'", r.getRowNum(), v);
             if (v != null) {
+                // Tenta divisão por separador único (-, |, /, ,) com limite de 2 partes
                 String[] parts = v.split("[-|,|/]", 2);
-                log.debug("Row {}: Split por separador: {} partes", r.getRowNum(), parts.length);
+                log.debug("Row {}: Split por separador [-|,|/]: {} partes -> ['{}', '{}']", 
+                    r.getRowNum(), parts.length, 
+                    parts.length > 0 ? parts[0] : "", 
+                    parts.length > 1 ? parts[1] : "");
+                
                 if (parts.length == 2) {
                     campusName = parts[0].trim();
                     turno = normalizeTurno(parts[1].trim());
                     log.debug("Row {}: Campus='{}', Turno após normalização='{}'", r.getRowNum(), campusName, turno);
                 } else {
+                    // Se não achou separador, tenta split por espaço duplo
                     String[] ws = v.split("\\s{2,}|\\r?\\n");
-                    log.debug("Row {}: Split por espaço: {} partes", r.getRowNum(), ws.length);
+                    log.debug("Row {}: Split por espaço duplo: {} partes", r.getRowNum(), ws.length);
                     if (ws.length >= 2) {
                         campusName = ws[0].trim();
                         turno = normalizeTurno(ws[1].trim());
@@ -324,14 +335,14 @@ public class Filtro {
                 }
             }
         } else {
+            // Campus e turno em colunas separadas (fallback)
             campusName = getCellString(r, cols.get("campus"));
             turno = getCellString(r, cols.get("turno"));
-            log.debug("Row {}: Campus e turno em colunas separadas - Campus='{}', Turno bruto='{}'", 
-                     r.getRowNum(), campusName, turno);
             if (turno != null) {
                 turno = normalizeTurno(turno);
-                log.debug("Row {}: Turno após normalização='{}'", r.getRowNum(), turno);
             }
+            log.debug("Row {}: Campus e turno em colunas separadas - Campus='{}', Turno bruto='{}'", 
+                    r.getRowNum(), campusName, turno);
         }
 
         // NOTA: TipoVaga será determinado automaticamente pela AlocacaoVagaService
@@ -509,8 +520,14 @@ public class Filtro {
             // Buscar CampusEdital
             CampusEdital ce = campusEditalRepository.findByCampusAndEdital(campus, edital);
             if (ce == null) {
-                log.warn("CampusEdital não encontrado para campus={} edital={}", campus.getId(), edital.getId());
-                return;
+                // Criar CampusEdital automaticamente se não existir
+                log.info("CampusEdital não encontrado para campus={} edital={}. Criando automaticamente...", 
+                    campus.getId(), edital.getId());
+                ce = new CampusEdital();
+                ce.setCampus(campus);
+                ce.setEdital(edital);
+                ce = campusEditalRepository.save(ce);
+                log.info("CampusEdital criado com sucesso: id={}", ce.getId());
             }
 
             // Verificar se turno já existe

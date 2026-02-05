@@ -42,7 +42,7 @@ public class RelatorioService {
         doc.add(Chunk.NEWLINE);
 
         String turnoLine = (turno != null && !turno.isBlank()) ? turno : "";
-        DateTimeFormatter dateF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        DateTimeFormatter dateF = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         DateTimeFormatter timeF = DateTimeFormatter.ofPattern("HH:mm");
 
         for (Campus campus : campusList) {

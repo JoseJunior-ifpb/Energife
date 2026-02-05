@@ -117,6 +117,10 @@
                             <th style="text-align:right;">Ocupadas Reservadas</th>
                             <th style="text-align:right;">Vagas Ampla</th>
                             <th style="text-align:right;">Ocupadas Ampla</th>
+                            <th style="text-align:right;">Class. Masc.</th>
+                            <th style="text-align:right;">Class. Fem.</th>
+                            <th style="text-align:right;">Habit. Masc.</th>
+                            <th style="text-align:right;">Habit. Fem.</th>
                             <th style="text-align:center;">Ações</th>
                         </tr>
                     </thead>
@@ -127,6 +131,10 @@
                             <td style="text-align:right;" th:text="${turno.vagasReservadasOcupadas}">0</td>
                             <td style="text-align:right;" th:text="${turno.numeroVagasAmplaConcorrencia}">0</td>
                             <td style="text-align:right;" th:text="${turno.vagasAmplaOcupadas}">0</td>
+                            <td style="text-align:right;" th:text="${turno.numeroVagasClassificadoMasculino}">0</td>
+                            <td style="text-align:right;" th:text="${turno.numeroVagasClassificadoFeminino}">0</td>
+                            <td style="text-align:right;" th:text="${turno.numeroVagasHabilitadoMasculino}">0</td>
+                            <td style="text-align:right;" th:text="${turno.numeroVagasHabilitadoFeminino}">0</td>
                             <td style="text-align:center;">
                                 <div class="actions">
                                     <button type="button" class="btn btn-sm btn-edit" th:onclick="'openEditTurnoForm(' + ${turno.id} + ',' + ${ce.id} + ')'">Editar</button>
@@ -166,6 +174,24 @@
                         <label>
                             <span class="muted">Vagas Ampla Concorrência</span>
                             <input type="number" name="numeroVagasAmplaConcorrencia" value="0" min="0" required />
+                        </label>
+                    </div>
+                    <div class="form-row">
+                        <label>
+                            <span class="muted">Vagas Classificados - Masculino</span>
+                            <input type="number" name="numeroVagasClassificadoMasculino" value="0" min="0" />
+                        </label>
+                        <label>
+                            <span class="muted">Vagas Classificados - Feminino</span>
+                            <input type="number" name="numeroVagasClassificadoFeminino" value="0" min="0" />
+                        </label>
+                        <label>
+                            <span class="muted">Vagas Habilitados - Masculino</span>
+                            <input type="number" name="numeroVagasHabilitadoMasculino" value="0" min="0" />
+                        </label>
+                        <label>
+                            <span class="muted">Vagas Habilitados - Feminino</span>
+                            <input type="number" name="numeroVagasHabilitadoFeminino" value="0" min="0" />
                         </label>
                     </div>
                     <div class="form-row">
