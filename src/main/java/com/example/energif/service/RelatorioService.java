@@ -1,23 +1,30 @@
 package com.example.energif.service;
 
-import org.springframework.stereotype.Service;
-import com.lowagie.text.*;
-import com.lowagie.text.pdf.PdfPCell;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfWriter;
-import com.example.energif.model.Candidato;
-import com.example.energif.model.Campus;
-import com.example.energif.model.SituacaoCandidato;
-import java.time.format.DateTimeFormatter;
 import java.awt.Color;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.example.energif.model.Campus;
+import com.example.energif.model.Candidato;
+import com.example.energif.model.SituacaoCandidato;
+import com.lowagie.text.Chunk;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
 
 @Service
 public class RelatorioService {
 
     private static final Color CINZA_CLARO = new Color(220, 220, 220);
     private static final Color CINZA_ESCURO = new Color(100, 100, 100);
+    private static final java.util.Locale PT_BR = new java.util.Locale("pt", "BR");
 
     public void gerarRelatorioPDF(Document doc, List<Campus> campusList, 
                                    Map<Campus, List<Candidato>> grouped, String turno) throws DocumentException {
@@ -54,11 +61,11 @@ public class RelatorioService {
             String campusName = campus != null ? campus.getNome() : "Sem Campus";
             
             // Agrupar por turno
-            Map<String, List<Candidato>> byTurno = candidatos.stream()
+                Map<String, List<Candidato>> byTurno = candidatos.stream()
                     .collect(java.util.stream.Collectors.groupingBy(
-                            c -> c.getTurno() != null ? c.getTurno() : "(sem turno)",
-                            java.util.LinkedHashMap::new, 
-                            java.util.stream.Collectors.toList()));
+                        c -> normalizeTurno(c.getTurno()),
+                        java.util.LinkedHashMap::new, 
+                        java.util.stream.Collectors.toList()));
 
             for (Map.Entry<String, List<Candidato>> turnoEntry : byTurno.entrySet()) {
                 String turnoName = turnoEntry.getKey();
@@ -66,7 +73,7 @@ public class RelatorioService {
                 // Campus e Turno em UMA LINHA, COM BORDA, EM NEGRITO
                 PdfPTable infoTable = new PdfPTable(1);
                 infoTable.setWidthPercentage(100);
-                PdfPCell infoCell = new PdfPCell(new Phrase("Campus: " + campusName + "     |     Turno: " + turnoName, infoBoldFont));
+                PdfPCell infoCell = new PdfPCell(new Phrase("Campus: " + campusName + "     |     " + turnoName, infoBoldFont));
                 infoCell.setBackgroundColor(CINZA_CLARO);
                 infoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
                 infoCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
@@ -114,7 +121,8 @@ public class RelatorioService {
                     table.addCell(cellData);
 
                     // Nome centralizado
-                    PdfPCell cellNome = new PdfPCell(new Phrase(c.getNome() != null ? c.getNome() : "-", normalFont));
+                    String nomeUpper = c.getNome() != null ? c.getNome().toUpperCase(PT_BR) : "-";
+                    PdfPCell cellNome = new PdfPCell(new Phrase(nomeUpper, normalFont));
                     cellNome.setHorizontalAlignment(Element.ALIGN_CENTER);
                     cellNome.setVerticalAlignment(Element.ALIGN_MIDDLE);
                     cellNome.setPadding(8);
@@ -187,13 +195,13 @@ public class RelatorioService {
         DateTimeFormatter dateTimeF = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
         // Ordenar candidatos alfabeticamente por nome (ignorando acentos)
-        java.text.Collator collator = java.text.Collator.getInstance(new java.util.Locale("pt", "BR"));
+        java.text.Collator collator = java.text.Collator.getInstance(PT_BR);
         collator.setStrength(java.text.Collator.PRIMARY); // Ignora acentos na comparação
         
         candidatos.sort((c1, c2) -> {
             String n1 = c1.getNome() != null ? c1.getNome() : "";
             String n2 = c2.getNome() != null ? c2.getNome() : "";
-            return collator.compare(n1.toUpperCase(), n2.toUpperCase());
+            return collator.compare(n1.toUpperCase(PT_BR), n2.toUpperCase(PT_BR));
         });
 
         // Criar tabela única com todas as colunas
@@ -232,7 +240,8 @@ public class RelatorioService {
             table.addCell(cellData);
 
             // Nome Completo
-            PdfPCell cellNome = new PdfPCell(new Phrase(c.getNome() != null ? c.getNome().toUpperCase() : "-", normalFont));
+            String nomeUpper = c.getNome() != null ? c.getNome().toUpperCase(PT_BR) : "-";
+            PdfPCell cellNome = new PdfPCell(new Phrase(nomeUpper, normalFont));
             cellNome.setHorizontalAlignment(Element.ALIGN_LEFT);
             cellNome.setVerticalAlignment(Element.ALIGN_MIDDLE);
             cellNome.setPadding(8);
@@ -242,7 +251,7 @@ public class RelatorioService {
 
             // Campus e Turno
             String campusName = c.getCampus() != null ? c.getCampus().getNome() : "Sem Campus";
-            String turnoName = c.getTurno() != null ? c.getTurno() : "(sem turno)";
+            String turnoName = normalizeTurno(c.getTurno());
             String campusTurnoStr = campusName + " - " + turnoName;
             PdfPCell cellCampusTurno = new PdfPCell(new Phrase(campusTurnoStr, normalFont));
             cellCampusTurno.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -254,5 +263,28 @@ public class RelatorioService {
         }
 
         doc.add(table);
+    }
+
+    private String normalizeTurno(String turnoRaw) {
+        if (turnoRaw == null || turnoRaw.isBlank()) {
+            return "(sem turno)";
+        }
+
+        String trimmed = turnoRaw.trim();
+        String lower = trimmed.toLowerCase(PT_BR);
+
+        if (lower.startsWith("turno da ")) {
+            trimmed = trimmed.substring(9).trim();
+        } else if (lower.startsWith("turno de ")) {
+            trimmed = trimmed.substring(9).trim();
+        } else if (lower.startsWith("turno ")) {
+            trimmed = trimmed.substring(6).trim();
+        }
+
+        if (trimmed.isBlank()) {
+            return "(sem turno)";
+        }
+
+        return "Turno da " + trimmed.toLowerCase(PT_BR);
     }
 }

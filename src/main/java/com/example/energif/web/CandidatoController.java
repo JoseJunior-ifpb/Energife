@@ -191,18 +191,12 @@ public class CandidatoController {
         } catch (Exception ex) {
             model.addAttribute("turnos", java.util.List.of());
         }
-        // Adicionar estatísticas de candidatos por situação
-        java.util.List<com.example.energif.model.Candidato> todosCandidatos = candidatoRepository.findAll();
-        long totalPendentes = todosCandidatos.stream()
-                .filter(c -> c.getSituacao() == SituacaoCandidato.PENDENTE).count();
-        long totalClassificados = todosCandidatos.stream()
-                .filter(c -> c.getSituacao() == SituacaoCandidato.CLASSIFICADO).count();
-        long totalHabilitados = todosCandidatos.stream()
-                .filter(c -> c.getSituacao() == SituacaoCandidato.HABILITADO).count();
-        long totalEliminados = todosCandidatos.stream()
-                .filter(c -> c.getSituacao() == SituacaoCandidato.ELIMINADO).count();
-        long totalCadastroReserva = todosCandidatos.stream()
-                .filter(c -> c.getSituacao() == SituacaoCandidato.CADASTRO_RESERVA).count();
+        // Adicionar estatísticas de candidatos por situação (sem carregar todos os registros)
+        long totalPendentes = candidatoRepository.countBySituacao(SituacaoCandidato.PENDENTE);
+        long totalClassificados = candidatoRepository.countBySituacao(SituacaoCandidato.CLASSIFICADO);
+        long totalHabilitados = candidatoRepository.countBySituacao(SituacaoCandidato.HABILITADO);
+        long totalEliminados = candidatoRepository.countBySituacao(SituacaoCandidato.ELIMINADO);
+        long totalCadastroReserva = candidatoRepository.countBySituacao(SituacaoCandidato.CADASTRO_RESERVA);
 
         model.addAttribute("totalPendentes", totalPendentes);
         model.addAttribute("totalClassificados", totalClassificados);

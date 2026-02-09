@@ -1,12 +1,15 @@
 package com.example.energif.repository;
 
-import com.example.energif.model.Candidato;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import java.util.List;
+
+import com.example.energif.model.Candidato;
+import com.example.energif.model.SituacaoCandidato;
 
 public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
 
@@ -66,4 +69,7 @@ public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
 		// Find CPFs that appear more than once and their counts
 		@Query(value = "SELECT cpf, COUNT(cpf) AS total_de_repeticoes FROM candidato GROUP BY cpf HAVING COUNT(cpf) > 1", nativeQuery = true)
 		List<Object[]> findDuplicateCpfs();
+
+		// Count candidates by situation (avoid loading all records)
+		long countBySituacao(SituacaoCandidato situacao);
 }
