@@ -9,7 +9,7 @@ RUN mvn -B -ntp dependency:go-offline
 COPY src ./src
 RUN mvn -B -ntp -DskipTests package
 
-FROM eclipse-temurin:17-jre-jammy
+FROM maven:3.9.4-eclipse-temurin-17
 ARG JAR_FILE=target/energif-0.0.1-SNAPSHOT.jar
 COPY --from=builder /workspace/${JAR_FILE} /app/app.jar
 

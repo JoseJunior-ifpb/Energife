@@ -412,7 +412,7 @@ input[type="file"]:hover {
 
 .styled th {
     padding: var(--space-4) var(--space-3);
-    text-align: left;
+    text-align: center;
     color: var(--light);
     font-weight: 600;
     font-size: var(--text-xs);
@@ -422,22 +422,37 @@ input[type="file"]:hover {
     word-break: break-word;
     position: relative;
     vertical-align: middle;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.styled thead th {
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .styled tbody tr {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     transition: var(--transition-base);
 }
 
-.styled tbody tr:hover {
-    background: rgba(102, 126, 234, 0.05);
+.styled tbody tr:nth-child(odd) {
+    background-color: #f2edff;
+}
+
+.styled tbody tr:nth-child(even) {
+    background-color: #d6cafa;
+}
+
+.styled tbody tr:hover,
+.styled tbody tr:hover td {
+    background-color: #c7b6ef;
 }
 
 .styled td {
     padding: var(--space-4) var(--space-3);
     vertical-align: middle;
+    text-align: center;
     word-break: break-word;
     overflow-wrap: break-word;
+    border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 /* Células de ação na tabela - CORRIGIDO PARA EVITAR CONFLITOS */
@@ -531,6 +546,15 @@ input[type="file"]:hover {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.motivo-select {
+    display: block;
+    width: 98%;
+    min-width: 180px;
+    max-width: 100%;
+    box-sizing: border-box;
+    font-size: 0.85rem;
 }
 
 .motivo-input-form .btn-save-motivo {

@@ -72,4 +72,21 @@ public interface CandidatoRepository extends JpaRepository<Candidato, Long> {
 
 		// Count candidates by situation (avoid loading all records)
 		long countBySituacao(SituacaoCandidato situacao);
+
+		@Query(value = "SELECT c.situacao, COUNT(c.id) " +
+				"FROM candidato c LEFT JOIN campus cp ON cp.id = c.campus_id " +
+				"WHERE (:q IS NULL OR lower(c.nome) LIKE concat('%', :q, '%') OR lower(cp.nome) LIKE concat('%', :q, '%') OR c.cpf LIKE concat('%', :q, '%')) " +
+				"AND (:campusId IS NULL OR cp.id = :campusId) " +
+				"AND (:genero IS NULL OR c.genero = :genero) " +
+				"AND (:idade IS NULL OR (:idade = 'maior' AND c.data_nascimento <= (current_date - INTERVAL '18 years')) OR (:idade = 'menor' AND c.data_nascimento > (current_date - INTERVAL '18 years'))) " +
+				"AND (:situacao IS NULL OR c.situacao = :situacao) " +
+				"AND (:turno IS NULL OR lower(c.turno) = lower(:turno)) " +
+				"GROUP BY c.situacao",
+				nativeQuery = true)
+		List<Object[]> countSituacaoByFilters(@Param("q") String q,
+										 @Param("campusId") Long campusId,
+										 @Param("genero") Character genero,
+										 @Param("idade") String idade,
+										 @Param("situacao") String situacao,
+										 @Param("turno") String turno);
 }

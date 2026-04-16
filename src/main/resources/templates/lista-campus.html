@@ -173,22 +173,33 @@
 
         table.styled th {
             padding: 15px;
-            text-align: left;
+            text-align: center;
             font-weight: 600;
             font-size: 0.9rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         table.styled td {
             padding: 15px;
-            border-bottom: 1px solid #ecf0f1;
+            text-align: center;
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
         table.styled tbody tr {
             transition: background-color 0.3s ease;
         }
 
-        table.styled tbody tr:hover {
-            background-color: #f8f9fa;
+        table.styled tbody tr:nth-child(odd) {
+            background-color: #f2f6fc;
+        }
+
+        table.styled tbody tr:nth-child(even) {
+            background-color: #d6e6ff;
+        }
+
+        table.styled tbody tr:hover,
+        table.styled tbody tr:hover td {
+            background-color: #c7d6f2;
         }
 
         table.styled tbody tr.updating {
@@ -205,10 +216,24 @@
 
         /* ===== BADGES DE STATUS ===== */
         .status-badge span {
-            padding: 5px 10px;
+            padding: 5px 0px;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+        }
+
+        .status-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-badge span {
+            display: inline-block;
+            line-height: 1.2;
+            width: fit-content;
+            white-space: nowrap;
         }
 
         .status-success {
@@ -545,6 +570,9 @@
                                 <span th:id="'vagas-habilitado-disponiveis-' + ${turno.campusEditalTurnoId}" th:text="${turno.vagasHabilitadoDisponiveis}">0</span> disponíveis
                             </div>
                         </div>
+                    </td>
+                    <td>
+                        <strong th:id="'vagas-cadastro-total-' + ${turno.campusEditalTurnoId}" th:text="${turno.numeroVagasCadastroReserva}">0</strong>
                     </td>
                     <td>
                         <strong th:id="'total-vagas-' + ${turno.campusEditalTurnoId}" th:text="${turno.numeroVagasReservadas + turno.numeroVagasAmplaConcorrencia + turno.numeroVagasClassificado + turno.numeroVagasHabilitado + turno.numeroVagasCadastroReserva}">0</strong>

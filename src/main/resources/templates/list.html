@@ -188,7 +188,7 @@
                     <td style="min-width: 220px;">
                         <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post" class="situacao-form">
                             <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <select name="situacao" th:onchange="this.form.closest('tr').querySelector('.motivo-input').style.display = (this.value == 'ELIMINADO') ? 'table-cell' : 'none';">
+                            <select name="situacao" th:onchange="const tr=this.form.closest('tr'); const motivoSelect=tr.querySelector('.motivo-select'); const motivoPlaceholder=tr.querySelector('.motivo-placeholder'); const mostrar=(this.value==='ELIMINADO'); if(motivoSelect){motivoSelect.style.display=mostrar?'inline-block':'none';} if(motivoPlaceholder){motivoPlaceholder.style.display=mostrar?'none':'inline';}">
                                 <option th:value="'PENDENTE'" th:selected="${cand.situacao != null and cand.situacao.name() == 'PENDENTE'}">Pendente</option>
                                 <option th:value="'CLASSIFICADO'" th:selected="${cand.situacao != null and cand.situacao.name() == 'CLASSIFICADO'}">Classificado</option>
                                 <option th:value="'HABILITADO'" th:selected="${cand.situacao != null and cand.situacao.name() == 'HABILITADO'}">Habilitado</option>
@@ -205,10 +205,12 @@
                             <button type="submit" class="btn btn-sm">Salvar</button>
                         </form>
                     </td>
-<td class="motivo-input" 
-    th:style="${cand.situacao == null or cand.situacao.name() == 'NAO_CLASSIFICADO' or cand.situacao.name() == 'ELIMINADO'} 
-              ? 'display:table-cell; padding: 0 15px;' 
-              : 'display:none;'">                        <select name="motivo">
+                    <td class="motivo-input" style="padding: 0 15px;">
+                        <span class="motivo-placeholder"
+                              th:style="${cand.situacao != null and cand.situacao.name() == 'ELIMINADO'} ? 'display:none;' : 'display:inline;'">-</span>
+                        <select name="motivo"
+                                class="motivo-select"
+                            th:style="${cand.situacao != null and cand.situacao.name() == 'ELIMINADO'} ? 'display:block; width:98%; box-sizing:border-box; min-width:0; margin:0 auto;' : 'display:none;'">
                             <option value="" th:selected="${cand.motivoNaoClassificacao == null || cand.motivoNaoClassificacao == ''}">Selecione um motivo</option>
                             <option th:each="m : ${motivos}" th:value="${m.descricao}"
                                 th:text="${m.descricao}"
@@ -228,7 +230,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="pagination" style="padding:12px;display:flex;align-items:center;gap:8px;justify-content-center"
+        <div class="pagination" th:if="${candidatosPage.totalPages > 0}" style="padding:12px;display:flex;align-items:center;gap:8px;justify-content-center"
              th:with="total=${candidatosPage.totalPages},
                       start=${currentPage - 2 >= 0 ? currentPage - 2 : 0},
                       end=${currentPage + 2 <= total - 1 ? currentPage + 2 : total - 1}">
@@ -284,6 +286,33 @@
 </div>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    function clearFilterFieldsWhenNoFilterInUrl() {
+        const params = new URLSearchParams(window.location.search || '');
+        const hasFilter = ["q", "campusId", "genero", "idade", "situacao", "turno"].some((key) => {
+            const value = params.get(key);
+            return value !== null && String(value).trim() !== "";
+        });
+
+        if (hasFilter) {
+            return;
+        }
+
+        document.querySelectorAll('input[name="q"]').forEach((input) => {
+            if (input.type !== 'hidden' || input.value) {
+                input.value = '';
+            }
+        });
+
+        ["campusId", "genero", "idade", "situacao", "turno"].forEach((name) => {
+            document.querySelectorAll('select[name="' + name + '"]').forEach((select) => {
+                select.value = '';
+            });
+        });
+    }
+
+    clearFilterFieldsWhenNoFilterInUrl();
+    window.addEventListener('pageshow', clearFilterFieldsWhenNoFilterInUrl);
+
     // motivo agora é um select simples; o envio é controlado pelo botão "Salvar" da situacao-form
     // Intercept situacao forms and submit via AJAX as well
     document.querySelectorAll('.situacao-form').forEach(function(form) {
@@ -382,11 +411,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                // If the selected situacao requires motivo ('ELIMINADO' or 'NAO_CLASSIFICADO'), show motivo cell; otherwise hide it
+                // If the selected situacao is ELIMINADO, show motivo select; otherwise show placeholder
                 const situacaoVal = (new FormData(form)).get('situacao');
                 const motivoCell = tr.querySelector('.motivo-input');
                 if (motivoCell) {
-                    motivoCell.style.display = (situacaoVal === 'ELIMINADO' || situacaoVal === 'NAO_CLASSIFICADO') ? 'table-cell' : 'none';
+                    const motivoSelect = motivoCell.querySelector('.motivo-select');
+                    const motivoPlaceholder = motivoCell.querySelector('.motivo-placeholder');
+                    const mostrarMotivo = (situacaoVal === 'ELIMINADO');
+                    if (motivoSelect) {
+                        motivoSelect.style.display = mostrarMotivo ? 'inline-block' : 'none';
+                    }
+                    if (motivoPlaceholder) {
+                        motivoPlaceholder.style.display = mostrarMotivo ? 'none' : 'inline';
+                    }
                 }
 
                 indicator.textContent = 'Salvo';

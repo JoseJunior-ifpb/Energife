@@ -102,7 +102,7 @@ public class CandidatoController {
 
     @GetMapping("/list")
     public String listAll(
-            @RequestParam(name = "order", required = false, defaultValue = "newest") String order,
+            @RequestParam(name = "order", required = false, defaultValue = "oldest") String order,
             @RequestParam(name = "q", required = false) String q,
             @RequestParam(name = "campusId", required = false) Long campusId,
             @RequestParam(name = "genero", required = false) String genero,
@@ -191,12 +191,44 @@ public class CandidatoController {
         } catch (Exception ex) {
             model.addAttribute("turnos", java.util.List.of());
         }
-        // Adicionar estatísticas de candidatos por situação (sem carregar todos os registros)
-        long totalPendentes = candidatoRepository.countBySituacao(SituacaoCandidato.PENDENTE);
-        long totalClassificados = candidatoRepository.countBySituacao(SituacaoCandidato.CLASSIFICADO);
-        long totalHabilitados = candidatoRepository.countBySituacao(SituacaoCandidato.HABILITADO);
-        long totalEliminados = candidatoRepository.countBySituacao(SituacaoCandidato.ELIMINADO);
-        long totalCadastroReserva = candidatoRepository.countBySituacao(SituacaoCandidato.CADASTRO_RESERVA);
+        // Estatísticas dinâmicas por situação (respeitando os filtros aplicados na listagem)
+        long totalPendentes = 0L;
+        long totalClassificados = 0L;
+        long totalHabilitados = 0L;
+        long totalEliminados = 0L;
+        long totalCadastroReserva = 0L;
+
+        try {
+            List<Object[]> situacaoCounts = candidatoRepository.countSituacaoByFilters(
+                    qParam,
+                    campusId,
+                    generoChar,
+                    idadeNorm,
+                    situacaoFilter,
+                    turnoNorm);
+
+            for (Object[] row : situacaoCounts) {
+                if (row == null || row.length < 2 || row[0] == null || row[1] == null) {
+                    continue;
+                }
+
+                String situacaoNome = String.valueOf(row[0]).trim().toUpperCase();
+                long total = (row[1] instanceof Number) ? ((Number) row[1]).longValue()
+                        : Long.parseLong(String.valueOf(row[1]));
+
+                switch (situacaoNome) {
+                    case "PENDENTE" -> totalPendentes = total;
+                    case "CLASSIFICADO" -> totalClassificados = total;
+                    case "HABILITADO" -> totalHabilitados = total;
+                    case "ELIMINADO" -> totalEliminados = total;
+                    case "CADASTRO_RESERVA" -> totalCadastroReserva = total;
+                    default -> {
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            logger.warn("Falha ao calcular estatísticas filtradas. Mantendo contadores zerados.", ex);
+        }
 
         model.addAttribute("totalPendentes", totalPendentes);
         model.addAttribute("totalClassificados", totalClassificados);
@@ -244,7 +276,7 @@ public class CandidatoController {
             @RequestParam(name = "editalDescricao", required = false) String editalDescricao,
             Model model) {
         if (file == null || file.isEmpty()) {
-            return "redirect:/candidatos/list?error=empty";
+            return "redirect:/candidatos/list?order=oldest&error=empty";
         }
         try {
             // save to temp file for processing by the importer
@@ -256,14 +288,14 @@ public class CandidatoController {
             // invoke Filtro importer to parse and import rows
             try {
                 int imported = filtro.importarXlsx(tmp.toFile(), editalDescricao);
-                return "redirect:/candidatos/list?import=ok&count=" + imported;
+                return "redirect:/candidatos/list?order=oldest&import=ok&count=" + imported;
             } catch (Exception ex) {
                 logger.error("Erro ao importar xlsx", ex);
-                return "redirect:/candidatos/list?import=error";
+                return "redirect:/candidatos/list?order=oldest&import=error";
             }
         } catch (Exception e) {
             logger.error("Erro ao receber arquivo de importacao", e);
-            return "redirect:/candidatos/list?import=error";
+            return "redirect:/candidatos/list?order=oldest&import=error";
         }
     }
 
