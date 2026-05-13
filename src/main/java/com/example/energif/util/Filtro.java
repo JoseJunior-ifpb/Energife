@@ -3,6 +3,7 @@ package com.example.energif.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.text.Normalizer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -140,26 +141,47 @@ public class Filtro {
         for (Cell cell : header) {
             String txt = safeString(cell);
             System.out.println("Coluna " + cell.getColumnIndex() + ": '" + txt + "'");
+            String normalizedTxt = normalizeHeaderText(txt);
 
             // BUSCA EXATA pelas colunas específicas
-            if (txt.equals("Carimbo de data/hora")) {
-                map.put("timestamp", cell.getColumnIndex());
-                System.out.println(">>> CARIMBO DE DATA/HORA EXATO encontrado na coluna: " + cell.getColumnIndex());
-            } else if (txt.equals("Campus (cidade) e turno:")) {
-                map.put("campus_turno", cell.getColumnIndex());
-                System.out.println(">>> CAMPUS E TURNO EXATO encontrado na coluna: " + cell.getColumnIndex());
-            } else if (txt.equals("Nome Completo")) {
-                map.put("nome", cell.getColumnIndex());
-                System.out.println(">>> NOME COMPLETO EXATO encontrado na coluna: " + cell.getColumnIndex());
-            } else if (txt.equals("Gênero")) {
-                map.put("genero", cell.getColumnIndex());
-                System.out.println(">>> GÊNERO EXATO encontrado na coluna: " + cell.getColumnIndex());
-            } else if (txt.equals("Data de Nascimento")) {
-                map.put("dataNascimento", cell.getColumnIndex());
-                System.out.println(">>> DATA DE NASCIMENTO EXATA encontrada na coluna: " + cell.getColumnIndex());
-            } else if (txt.equals("CPF")) {
-                map.put("cpf", cell.getColumnIndex());
-                System.out.println(">>> CPF EXATO encontrado na coluna: " + cell.getColumnIndex());
+            switch (normalizedTxt) {
+                case "carimbo de data/hora":
+                case "timestamp":
+                    map.put("timestamp", cell.getColumnIndex());
+                    System.out.println(">>> CARIMBO DE DATA/HORA EXATO encontrado na coluna: " + cell.getColumnIndex());
+                    break;
+                case "campus (cidade) e turno:":
+                case "campus (cidade) e turno":
+                    map.put("campus_turno", cell.getColumnIndex());
+                    System.out.println(">>> CAMPUS E TURNO EXATO encontrado na coluna: " + cell.getColumnIndex());
+                    break;
+                case "nome completo":
+                    map.put("nome", cell.getColumnIndex());
+                    System.out.println(">>> NOME COMPLETO EXATO encontrado na coluna: " + cell.getColumnIndex());
+                    break;
+                case "genero":
+                case "gênero":
+                    map.put("genero", cell.getColumnIndex());
+                    System.out.println(">>> GÊNERO EXATO encontrado na coluna: " + cell.getColumnIndex());
+                    break;
+                case "data de nascimento":
+                    map.put("dataNascimento", cell.getColumnIndex());
+                    System.out.println(">>> DATA DE NASCIMENTO EXATA encontrada na coluna: " + cell.getColumnIndex());
+                    break;
+                case "cpf":
+                    map.put("cpf", cell.getColumnIndex());
+                    System.out.println(">>> CPF EXATO encontrado na coluna: " + cell.getColumnIndex());
+                    break;
+                case "situacao":
+                    map.put("situacao", cell.getColumnIndex());
+                    System.out.println(">>> SITUAÇÃO EXATA encontrada na coluna: " + cell.getColumnIndex());
+                    break;
+                case "motivo":
+                    map.put("motivo", cell.getColumnIndex());
+                    System.out.println(">>> MOTIVO EXATO encontrado na coluna: " + cell.getColumnIndex());
+                    break;
+                default:
+                    break;
             }
             // REMOVIDO: busca por "tipo_vaga" pois agora é determinado pelo gênero
         }
@@ -168,6 +190,7 @@ public class Filtro {
         System.out.println("=== BUSCA APROXIMADA (FALLBACK) ===");
         for (Cell cell : header) {
             String txt = safeString(cell).toLowerCase();
+            String normalizedTxt = normalizeHeaderText(txt);
             
             // Fallback para Campus e Turno separados
             if (!map.containsKey("campus") && (txt.contains("campus") || txt.contains("cidade"))) {
@@ -208,11 +231,21 @@ public class Filtro {
                 map.put("cpf", cell.getColumnIndex());
                 System.out.println(">>> CPF (aproximado) encontrado na coluna: " + cell.getColumnIndex());
             }
+
+            if (!map.containsKey("situacao") && (normalizedTxt.contains("situacao") || normalizedTxt.contains("status"))) {
+                map.put("situacao", cell.getColumnIndex());
+                System.out.println(">>> SITUAÇÃO (aproximado) encontrada na coluna: " + cell.getColumnIndex());
+            }
+
+            if (!map.containsKey("motivo") && (normalizedTxt.contains("motivo") || normalizedTxt.contains("justificativa") || normalizedTxt.contains("observacao"))) {
+                map.put("motivo", cell.getColumnIndex());
+                System.out.println(">>> MOTIVO (aproximado) encontrado na coluna: " + cell.getColumnIndex());
+            }
         }
 
         // Verificação se todas as colunas obrigatórias foram encontradas
         System.out.println("=== VERIFICAÇÃO DE COLUNAS OBRIGATÓRIAS ===");
-        String[] obrigatorias = { "timestamp", "nome", "genero", "dataNascimento", "cpf" };
+        String[] obrigatorias = { "timestamp", "nome", "genero", "dataNascimento", "cpf", "situacao", "motivo" };
         for (String col : obrigatorias) {
             if (!map.containsKey(col)) {
                 System.out.println("!!! ERRO: Coluna obrigatória não encontrada: " + col);
@@ -247,6 +280,58 @@ public class Filtro {
         }
         log.debug("Turno preservado do arquivo: '{}'", s);
         return s;
+    }
+
+    private String normalizeHeaderText(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String normalized = Normalizer.normalize(raw, Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{M}+", "");
+        return normalized.toLowerCase().trim();
+    }
+
+    /**
+     * Converte uma string (lida do arquivo Excel) para o enum SituacaoCandidato.
+     * Tenta encontrar a correspondência exata ou aproximada.
+     * Se não conseguir converter, retorna PENDENTE como padrão.
+     */
+    private SituacaoCandidato converterStringSituacao(String str) {
+        if (str == null || str.isBlank()) {
+            log.debug("Situação vazia - usando padrão PENDENTE");
+            return SituacaoCandidato.PENDENTE;
+        }
+
+        String normalized = str.trim().toUpperCase();
+        
+        // Busca exata pelos nomes dos enums
+        try {
+            return SituacaoCandidato.valueOf(normalized);
+        } catch (IllegalArgumentException e) {
+            log.debug("Situação '{}' não encontrada como enum exato, tentando aproximação", str);
+        }
+
+        // Busca aproximada pela descrição
+        for (SituacaoCandidato sit : SituacaoCandidato.values()) {
+            if (sit.getDescricao().equalsIgnoreCase(str)) {
+                log.debug("Situação '{}' convertida para {}", str, sit);
+                return sit;
+            }
+        }
+
+        // Busca parcial
+        if (normalized.contains("CLASSIF")) {
+            return SituacaoCandidato.CLASSIFICADO;
+        } else if (normalized.contains("HABITL") || normalized.contains("HABILITAD")) {
+            return SituacaoCandidato.HABILITADO;
+        } else if (normalized.contains("RESERV")) {
+            return SituacaoCandidato.CADASTRO_RESERVA;
+        } else if (normalized.contains("ELIMIN")) {
+            return SituacaoCandidato.ELIMINADO;
+        }
+
+        log.warn("Situação '{}' não pôde ser convertida - usando padrão PENDENTE", str);
+        return SituacaoCandidato.PENDENTE;
     }
 
     private Candidato mapRowToCandidato(Row r, Map<String, Integer> cols) {
@@ -376,8 +461,19 @@ public class Filtro {
         c.setTurno(turno);
         c.setDataInscricao(dataInscricao);
         c.setHoraInscricao(horaInscricao);
+        
+        // Converter string de situação para enum SituacaoCandidato
+        String situacaoStr = getCellString(r, cols.get("situacao"));
+        SituacaoCandidato situacao = converterStringSituacao(situacaoStr);
+        c.setSituacao(situacao);
+        
+        // Atribuir motivo (se disponível)
+        String motivo = getCellString(r, cols.get("motivo"));
+        if (motivo != null && !motivo.isBlank()) {
+            c.setMotivoNaoClassificacao(motivo);
+        }
+        
         // TipoVaga será definido pela AlocacaoVagaService durante alocação de vagas
-        c.setSituacao(SituacaoCandidato.PENDENTE); // Por padrão, candidato PENDENTE
 
         log.debug("Candidato mapeado: {} - Gênero: {} - Campus: {}",
                 nome, genero, campusName);

@@ -185,38 +185,8 @@
                     <td th:text="${cand.turno}">-</td>
                     <td th:text="${cand.genero}">-</td>
                     <td><div th:text="${cand.dataInscricao}">-</div><div class="muted" th:text="${cand.horaInscricao}">-</div></td>
-                    <td style="min-width: 220px;">
-                        <form th:action="@{'/candidatos/' + ${cand.id} + '/habilitar'}" method="post" class="situacao-form">
-                            <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                            <select name="situacao" th:onchange="const tr=this.form.closest('tr'); const motivoSelect=tr.querySelector('.motivo-select'); const motivoPlaceholder=tr.querySelector('.motivo-placeholder'); const mostrar=(this.value==='ELIMINADO'); if(motivoSelect){motivoSelect.style.display=mostrar?'inline-block':'none';} if(motivoPlaceholder){motivoPlaceholder.style.display=mostrar?'none':'inline';}">
-                                <option th:value="'PENDENTE'" th:selected="${cand.situacao != null and cand.situacao.name() == 'PENDENTE'}">Pendente</option>
-                                <option th:value="'CLASSIFICADO'" th:selected="${cand.situacao != null and cand.situacao.name() == 'CLASSIFICADO'}">Classificado</option>
-                                <option th:value="'HABILITADO'" th:selected="${cand.situacao != null and cand.situacao.name() == 'HABILITADO'}">Habilitado</option>
-                                <option th:value="'ELIMINADO'" th:selected="${cand.situacao != null and cand.situacao.name() == 'ELIMINADO'}">Eliminado</option>
-                                <!-- Opção para Cadastro de Reserva (suplente) - desabilitado se não houver vagas -->
-                                <option th:value="'CADASTRO_RESERVA'" 
-                                    th:selected="${cand.situacao != null and cand.situacao.name() == 'CADASTRO_RESERVA'}"
-                                    th:disabled="${cand.campus == null or cand.campus.numeroVagasCadastroReserva == null or cand.campus.numeroVagasCadastroReserva <= 0}"
-                                    th:title="${(cand.campus != null and (cand.campus.numeroVagasCadastroReserva == null or cand.campus.numeroVagasCadastroReserva <= 0)) ? 'Nenhuma vaga de cadastro de reserva configurada' : ''}">
-                                    Cadastro de Reserva
-                                </option>
-                            </select>
-                            <!-- no hidden situacao: only the select should send the chosen situacao -->
-                            <button type="submit" class="btn btn-sm">Salvar</button>
-                        </form>
-                    </td>
-                    <td class="motivo-input" style="padding: 0 15px;">
-                        <span class="motivo-placeholder"
-                              th:style="${cand.situacao != null and cand.situacao.name() == 'ELIMINADO'} ? 'display:none;' : 'display:inline;'">-</span>
-                        <select name="motivo"
-                                class="motivo-select"
-                            th:style="${cand.situacao != null and cand.situacao.name() == 'ELIMINADO'} ? 'display:block; width:98%; box-sizing:border-box; min-width:0; margin:0 auto;' : 'display:none;'">
-                            <option value="" th:selected="${cand.motivoNaoClassificacao == null || cand.motivoNaoClassificacao == ''}">Selecione um motivo</option>
-                            <option th:each="m : ${motivos}" th:value="${m.descricao}"
-                                th:text="${m.descricao}"
-                                th:selected="${m.descricao == cand.motivoNaoClassificacao}"></option>
-                        </select>
-                    </td>
+                    <td th:text="${cand.situacao != null ? cand.situacao.descricao : '-'}">-</td>
+                    <td th:text="${cand.motivoNaoClassificacao != null && cand.motivoNaoClassificacao != '' ? cand.motivoNaoClassificacao : '-'}">-</td>
                     <td style="text-align: center;">
                         <button class="btn btn-danger btn-sm btn-deletar-candidato" 
                                 th:data-candidato-id="${cand.id}" 
